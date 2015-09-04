@@ -60,11 +60,11 @@ class ChatController extends Controller{
          * @var $dialog PoprigunChatDialog
          */
         $dialog = PoprigunChatDialog::findOne(['id' => $dialogId]);
-        $offset = Yii::$app->request->post('offset');
-        $old = Yii::$app->request->post('old',false);
-        $count = Yii::$app->request->post('count',false);
+        $offset = Yii::$app->request->get('offset');
+        $old = Yii::$app->request->get('old',false);
+        $count = Yii::$app->request->get('count',false);
 
-        $options = Yii::$app->request->post('options',false);
+        $options = Yii::$app->request->get('options',false);
         $limit = empty($options['count']) ? Chat::$defaultCount : $options['count'];
 
         if(null == $dialog || !$dialog->isAllowed($this->user->id)){

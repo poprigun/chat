@@ -100,7 +100,7 @@ $(window).ready(function(){
 
                 $.ajax({
                     url: '/pchat/get-dialogs',
-                    type: 'POST',
+                    type: 'GET',
                     data: {
                         options:  {
                             showAvatar: self.showAvatar,
@@ -133,7 +133,7 @@ $(window).ready(function(){
 
                 $.ajax({
                     url: '/pchat/get-dialog-messages?dialogId='+dialogId,
-                    type: 'POST',
+                    type: 'GET',
                     dataType: 'json',
                     data: {
                         offset:  offset,
@@ -194,7 +194,7 @@ $(window).ready(function(){
                         $(parent).attr('loaded', 'loaded');
 
                         $.ajax({
-                            type: 'post',
+                            type: 'GET',
                             url: '/pchat/get-dialog-messages?dialogId='+dialogId,
                             dataType: 'json',
                             data: {
@@ -284,7 +284,7 @@ $(window).ready(function(){
 
             $.ajax({
                 url: '/pchat/get-dialog-messages?dialogId='+dialogId,
-                type: 'POST',
+                type: 'GET',
                 dataType: 'json',
                 data: {
                     count: true,
