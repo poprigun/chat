@@ -1,6 +1,5 @@
 <?php
 
-namespace poprigun\chat\migrations;
 /* @var $this \yii\web\View */
 
 use poprigun\chat\models\PoprigunChat;

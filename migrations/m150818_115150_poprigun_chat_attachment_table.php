@@ -1,7 +1,5 @@
 <?php
 
-namespace poprigun\chat\migrations;
-
 use yii\db\Schema;
 use yii\db\Migration;
 

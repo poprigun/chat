@@ -1,10 +1,8 @@
 <?php
 
-namespace poprigun\chat\migrations;
-
 use poprigun\chat\models\PoprigunChatDialog;
-use yii\db\Schema;
 use yii\db\Migration;
+use yii\db\Schema;
 
 class m150818_115032_poprigun_chat_dialog_table extends Migration
 {
