@@ -99,7 +99,7 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface
     public static function getUserDialogs($userId){
 
         return self::find()
-            ->innerJoinWith('PoprigunChatUsers')
+            ->innerJoinWith('poprigunChatUsers')
             ->where([PoprigunChatUser::tableName().'.user_id' => $userId])->all();
     }
 
