@@ -1,0 +1,21 @@
+{
+    "name": "poprigun/chat",
+    "description": "poprigun-chat",
+    "type": "yii2-extension",
+    "keywords": ["yii2","extension"," poprigun"," chat"],
+    "license": "BSD-4-Clause",
+    "authors": [
+        {
+            "name": "poprigun",
+            "email": "popriguns@gmail.com"
+        }
+    ],
+    "require": {
+        "yiisoft/yii2": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "poprigun\\chat\\": ""
+        }
+    }
+}

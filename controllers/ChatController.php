@@ -1,0 +1,207 @@
+<?php
+
+namespace poprigun\chat\controllers;
+
+use frontend\widgets\conversation\models\PoprigunConversationUserRel;
+use poprigun\chat\filters\AjaxFilter;
+use poprigun\chat\models\PoprigunChatMessage;
+use poprigun\chat\models\PoprigunChatDialog;
+use poprigun\chat\models\PoprigunChatUserRel;
+use poprigun\chat\widgets\Chat;
+use Yii;
+use yii\filters\ContentNegotiator;
+use yii\helpers\ArrayHelper;
+use yii\web\BadRequestHttpException;
+use yii\web\Controller;
+use yii\web\Response;
+use yii\widgets\ActiveForm;
+
+class ChatController extends Controller{
+
+    private $user;
+
+    public function init(){
+        $this->user = Yii::$app->user->identity;
+    }
+
+    public function behaviors(){
+
+        return [
+            'ajaxAccess' => [
+                'class' => AjaxFilter::className(),
+            ],
+            'responseData' => [
+                'class' => ContentNegotiator::className(),
+                'formats' => [
+                    'application/json' => Response::FORMAT_JSON,
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Get user dialogs
+     *
+     * @return mixed
+     * @throws BadRequestHttpException
+     */
+    public function actionGetDialogs(){
+
+        $type = Yii::$app->request->get('dialog_type',null);
+        $dialogs = PoprigunChatDialog::getUserDialogs($this->user->id, $type);
+        $result = $this->getDialogsArray($dialogs);
+        return $result;
+    }
+
+    /**
+     * Get messages for dialog
+     *
+     * @param integer $dialogId
+     * @return array
+     * @throws BadRequestHttpException
+     */
+    public function actionGetDialogMessages($dialogId){
+
+        /**
+         * @var $dialog PoprigunChatDialog
+         */
+        $dialog = PoprigunChatDialog::findOne(['id' => $dialogId]);
+        $offset = Yii::$app->request->get('offset');
+        $old = Yii::$app->request->get('old',false);
+        $count = Yii::$app->request->get('count',false);
+
+        if(null == $dialog || !$dialog->isAllowed($this->user->id)){
+            throw new \BadMethodCallException;
+        }
+
+        $limit = empty(Yii::$app->session->get(Chat::getSessionName())['message_count'])
+            ? Chat::$defaultCount
+            : Yii::$app->session->get(Chat::getSessionName())['message_count'];
+
+        if($old){
+            $messages = $dialog->getMessages($limit, $offset);
+        }else{
+            $messages = $dialog->getMessages(empty($offset) ? $limit : null, $offset);
+        }
+
+        PoprigunChatUserRel::setReadMessage($this->user->id, PoprigunChatUserRel::getUnreadMessage($this->user->id,$messages));
+        $json = $this->getMessageArray($messages);
+
+        if(!empty($json)){
+            if($offset == null){
+                krsort($json);
+                $json = array_values($json);
+            }
+            if($count){
+                $json['count'] = $dialog->getPoprigunChat()->count();
+            }
+        }
+
+        return $json;
+    }
+
+    /**
+     * Send message
+     *
+     * @return bool
+     * @throws BadRequestHttpException
+     */
+    public function actionSendMessage(){
+
+        $model = new PoprigunChatMessage();
+        if($model->load(Yii::$app->request->post())){
+
+            $model->user_id = $this->user->id;
+            $validate = ActiveForm::validate($model);
+            if(empty($validate)){
+                $newMessage = $model->sendMessage();
+                $result =  $newMessage === false ? $newMessage : $this->getMessageArray([$newMessage]);
+            }else{
+                $result = $validate;
+            }
+
+        }else{
+            $result = $model->errors;
+        }
+        return $result;
+    }
+
+    /**
+    * Delete dialog (change status)
+    *
+    * @param $dialogId
+    * @return array
+    */
+    public function actionDeleteDialog($dialogId){
+        return [
+            'status' => PoprigunChatDialog::deleteDialog($dialogId) ? 'success':'error'
+        ];
+    }
+
+    /**
+    * Delete message (change status)
+    *
+    * @param $messageId
+    * @return array
+    */
+    public function actionDeleteMessage($messageId){
+        return [
+            'status' => PoprigunChatUserRel::deleteMessage($messageId) ? 'success':'error'
+        ];
+    }
+
+    public function getMessageArray($dialog){
+
+        $result = [];
+        $options = Yii::$app->session->get(Chat::getSessionName());
+        foreach($dialog as $key => $message){
+            $tempArray = [];
+            /**
+             * @var $message PoprigunChatMessage
+             */
+
+            $tempArray['user_id'] = $message->user_id;
+            $tempArray['user_name'] = $message->userName;
+            $tempArray['date'] = strtotime($message->created_at);
+            $tempArray['message'] = $message->message;
+            $tempArray['message_id'] = $message->id;
+            $tempArray['dialog_id'] = $message->dialog_id;
+
+            if(!isset($options['showAvatar']) || $options['showAvatar'] == true){
+                $tempArray['user_avatar'] =  $message->userAvatar;
+            }
+            $result[] = $tempArray;
+        }
+
+        return $result;
+    }
+
+    public function getDialogsArray($dialogs){
+
+        $result = [];
+        $options = Yii::$app->session->get(Chat::getSessionName());
+        if(!empty($dialogs)){
+
+            foreach($dialogs as $key => $dialog){
+                /**
+                 * @var $dialog PoprigunChatDialog
+                 */
+                $result[$key]['dialog_id'] = $dialog->id;
+                $result[$key]['user_id'] = $dialog->user_id;
+                $result[$key]['user_name'] = $dialog->userName;
+                $result[$key]['new_count'] = $dialog->newCount;
+
+                if(!isset($options['showAvatar']) || $options['showAvatar'] == true){
+                    $result[$key]['image'] = $dialog->userAvatar;
+                }
+
+                if(!isset($options['showLastMessage']) || $options['showLastMessage'] == true){
+                    $lastMessages = $dialog->messages;
+                    $result[$key]['last_message'] =  !empty($lastMessages[0]->message) ? $lastMessages[0]->message : '';
+                }
+            }
+        }
+
+        return $result;
+    }
+}
