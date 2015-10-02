@@ -97,6 +97,13 @@ class PoprigunChatUserRel extends \yii\db\ActiveRecord implements StatusInterfac
         return self::updateAll(['view' => self::OLD_MESSAGE],['user_id' => $userId, 'message_id' => $messageId]);
     }
 
+    /**
+     * Get unread message
+     *
+     * @param int $userId
+     * @param array $messages
+     * @return array
+     */
     public static function getUnreadMessage($userId, $messages){
         $result = [];
 

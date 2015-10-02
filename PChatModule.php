@@ -6,7 +6,4 @@ use yii\base\Module;
 
 class PChatModule extends Module{
 
-    public function init(){
-        parent::init();
-    }
 } 

@@ -3,9 +3,11 @@
 namespace poprigun\chat\widgets;
 
 use poprigun\chat\ChatAssets;
+use poprigun\chat\models\PoprigunChatDialog;
 use poprigun\chat\models\PoprigunChatMessage;
 use Yii;
 use yii\base\Widget;
+use yii\helpers\ArrayHelper;
 use yii\helpers\Html;
 use yii\helpers\Url;
 
@@ -26,6 +28,7 @@ class Chat extends Widget{
     public $showUserAvatar = true;
     public $showLastMessage = true;
     public $count;
+    public $socketUrl;
 
     public function init(){
 
@@ -37,6 +40,7 @@ class Chat extends Widget{
     public function initOptions(){
 
         $this->options['count'] = isset($this->count) ? $this->count : self::$defaultCount;
+        $this->options['socketUrl'] = isset($this->socketUrl) ? $this->count : 'http://'.$_SERVER['SERVER_ADDR'].':8080';
     }
 
     public function registerAssets(){
@@ -49,10 +53,11 @@ class Chat extends Widget{
             'showLastMessage'=>  $this->showLastMessage,
             'message_count'=>  $this->options['count'],
         ]);
+
         echo $this->renderFile($this->template,[
             'model' => new PoprigunChatMessage(),
             'options' => $this->options,
-            'url' => Url::toRoute(['/poprigun_chat/chat/get-dialogs']),
+            'rooms'   =>  self::generateRoomIds(Yii::$app->user->id,PoprigunChatDialog::getUserDialogs(Yii::$app->user->id)),
         ]);
     }
 
@@ -62,5 +67,16 @@ class Chat extends Widget{
 
     private function saveWidgetSettings($settings){
         Yii::$app->session->set(self::$sessionName,$settings);
+    }
+
+    public static function generateRoomIds($userId, $dialogs){
+        $dIds = ArrayHelper::map($dialogs,'id','id');
+        $userId = ('poprigun_chat#'.$userId);
+        $rooms[$userId] = [];
+        foreach($dIds as $id){
+            $rooms[$userId][] = ('dialog_id#'.$id);
+        }
+
+        return $rooms;
     }
 }

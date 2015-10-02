@@ -1,4 +1,6 @@
 var poprigunChat;
+var socket = io($('#poprigun-chat').data('url'));
+
 PoprigunChat = function(options){
 
     var self = this;
@@ -252,6 +254,9 @@ PoprigunChat = function(options){
                 dataType: 'json',
                 data: $(that).serialize(),
                 success: function (data) {
+
+                    socket.emit('message', 'sdfgsdfgdfgdfgsdfgfdg');
+
                     $('.poprigun-chat-form-message').val('');
                     var count = parseInt($('#poprigun-chat-message-block').data('messages'));
                     if(!Number.isInteger(count)){
@@ -259,6 +264,7 @@ PoprigunChat = function(options){
                     }
                     $.each(data,function(i,j){
                         j.date = dateTimeZone(j.date);
+
                         addItem(j,'#poprigun-chat-message','#poprigun-chat-message-block',true);
                         $('#poprigun-chat-message-block').data('messages',count + 1);
                         oldMessageIncrease();

@@ -10,13 +10,13 @@ The preferred way to install this extension is through [composer](http://getcomp
 Either run
 
 ```
-php composer.phar require --prefer-dist poprigun/chat "*"
+php composer.phar require poprigun/chat "dev-dev"
 ```
 
 or add
 
 ```
-"poprigun/chat": "*"
+"poprigun/chat": "dev-dev"
 ```
 
 to the require section of your `composer.json` file.
@@ -50,21 +50,21 @@ yii migrate --migrationPath=@vendor/poprigun/chat/migrations
 Main config
 ------------
   'modules' => [
-         'poprigun_chat' => [
-             'class' => \poprigun\chat\PChatModule::className(),
-             'params' => [
-                 'pchat-settings' => [
-                     'userModel' => \frontend\models\User::className(),
-                     'userAvatarMethod' => [
-                         'class' =>\frontend\models\User::className(),
-                         'method' =>'avatar',
-                     ],
-                     'userNameMethod' => [
-                         'class' =>\frontend\models\Profile::className(),
-                         'method' =>'fullName',
-                         'relation' => 'profile',
-                     ],
+     'poprigun_chat' => [
+         'class' => \poprigun\chat\PChatModule::className(),
+         'params' => [
+             'pchat-settings' => [
+                 'userModel' => \frontend\models\User::className(), //necessarily
+                 'userAvatarMethod' => [
+                     'class' =>\frontend\models\User::className(),
+                     'method' =>'avatar',
+                 ],
+                 'userNameMethod' => [
+                     'class' =>\frontend\models\Profile::className(),
+                     'method' =>'fullName',
+                     'relation' => 'profile',
                  ],
              ],
          ],
      ],
+ ],

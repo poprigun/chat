@@ -99,7 +99,10 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
 
         $query = self::find()
             ->innerJoinWith('poprigunChatUsers')
-            ->andWhere([PoprigunChatUser::tableName().'.user_id' => $userId]);
+            ->innerJoinWith('poprigunChat')
+            ->innerJoinWith('poprigunChat.chatUserRel')
+            ->andWhere([PoprigunChatUser::tableName().'.user_id' => $userId])
+            ->andWhere([PoprigunChatUserRel::tableName().'.status' => PoprigunChatUserRel::STATUS_ACTIVE]);
 
         if(null !== $type){
             $query->andWhere(['type' => $type]);
@@ -164,7 +167,7 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
      * @param int $type
      * @return PoprigunChatDialog
      */
-    protected static function createDialog($ownerId, $userId, $title = null, $type = self::TYPE_PERSONAL){
+    public static function createDialog($ownerId, $userId, $title = null, $type = self::TYPE_PERSONAL){
 
         $dialog = new PoprigunChatDialog();
         $dialog->user_id = $ownerId;

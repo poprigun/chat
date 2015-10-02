@@ -1,4 +1,4 @@
-<div id="poprigun-chat">
+<div id="poprigun-chat" data-url="<?=$options['socketUrl']?>" data-rooms='<?=json_encode($rooms)?>' data-user="<?=Yii::$app->user->id?>">
     <div class="col-sm-12">
         <div class="col-sm-4">
             <div class="panel panel-primary">
@@ -38,7 +38,7 @@
                                 'class' =>  ''
                             ],
                         ])->hiddenInput([
-                            'class' =>  'poprigun-chat-receiver-id'
+                            'class' =>  'poprigun-chat-receiver-id',
                         ])->label(false)?>
 
                         <?= $form->field($model,'messageType',[
@@ -60,7 +60,7 @@
     </div>
 </div>
 
-<div id="poprigun-chat-dialog" class="hide" data-url="<?=$url?>">
+<div id="poprigun-chat-dialog" class="hide">
     <li class="media poprigun-chat-dialog-id" data-block-dialog_id="data-dialog">
         <div class="media-message">
             <div class="media">

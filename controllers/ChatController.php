@@ -47,7 +47,7 @@ class ChatController extends Controller{
      */
     public function actionGetDialogs(){
 
-        $type = Yii::$app->request->get('dialog_type',null);
+        $type = Yii::$app->request->get('dialog_type');
         $dialogs = PoprigunChatDialog::getUserDialogs($this->user->id, $type);
         $result = $this->getDialogsArray($dialogs);
         return $result;
@@ -56,16 +56,17 @@ class ChatController extends Controller{
     /**
      * Get messages for dialog
      *
-     * @param integer $dialogId
      * @return array
      * @throws BadRequestHttpException
      */
-    public function actionGetDialogMessages($dialogId){
+    public function actionGetDialogMessages(){
 
         /**
          * @var $dialog PoprigunChatDialog
          */
+        $dialogId = Yii::$app->request->get('dialogId');
         $dialog = PoprigunChatDialog::findOne(['id' => $dialogId]);
+
         $offset = Yii::$app->request->get('offset');
         $old = Yii::$app->request->get('old',false);
         $count = Yii::$app->request->get('count',false);
