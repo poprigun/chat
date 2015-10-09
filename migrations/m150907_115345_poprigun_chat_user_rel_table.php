@@ -13,7 +13,7 @@ class m150907_115345_poprigun_chat_user_rel_table extends Migration
             'id'                    => 'INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY',
             'message_id'            => 'INT(11) NOT NULL',
             'user_id'               => 'INT(11) UNSIGNED NOT NULL',
-            'view'                  => 'TINYINT(1) NOT NULL DEFAULT '. PoprigunChatUserRel::NEW_MESSAGE,
+            'is_view'               => 'TINYINT(1) NOT NULL DEFAULT '. PoprigunChatUserRel::NEW_MESSAGE,
             'status'                => 'TINYINT(1) NOT NULL DEFAULT '. PoprigunChatUserRel::STATUS_ACTIVE,
         ], $tableOptions);
         $this->createIndex('idx-poprigun_chat_user_rel','{{%poprigun_chat_user_rel}}','message_id, user_id');

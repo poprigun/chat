@@ -25,8 +25,6 @@ class Chat extends Widget{
      * @var array widget plugin options
      */
     protected $options = [];
-    public $showUserAvatar = true;
-    public $showLastMessage = true;
     public $count;
     public $socketUrl;
 
@@ -40,6 +38,7 @@ class Chat extends Widget{
     public function initOptions(){
 
         $this->options['count'] = isset($this->count) ? $this->count : self::$defaultCount;
+        $this->options['userId'] = self::codeUserId(Yii::$app->user->id);
         $this->options['socketUrl'] = isset($this->socketUrl) ? $this->count : 'http://'.$_SERVER['SERVER_ADDR'].':8080';
     }
 
@@ -47,12 +46,6 @@ class Chat extends Widget{
 
         $view = $this->getView();
         ChatAssets::register($view);
-        $this->saveWidgetSettings([
-            'assetUrl'      =>  ChatAssets::register($view)->baseUrl,
-            'showUserAvatar'=>  $this->showUserAvatar,
-            'showLastMessage'=>  $this->showLastMessage,
-            'message_count'=>  $this->options['count'],
-        ]);
 
         echo $this->renderFile($this->template,[
             'model' => new PoprigunChatMessage(),
@@ -60,21 +53,29 @@ class Chat extends Widget{
             'rooms'   =>  self::generateRoomIds(Yii::$app->user->id,PoprigunChatDialog::getUserDialogs(Yii::$app->user->id)),
         ]);
     }
-
-    public static function getSessionName(){
-        return self::$sessionName;
+    // Code user id
+    public static function codeUserId($userId){
+        return ('userId'.$userId);
     }
-
-    private function saveWidgetSettings($settings){
-        Yii::$app->session->set(self::$sessionName,$settings);
+    // Decode user id
+    public static function decodeUserId($code){
+        return str_replace('userId','',$code);
     }
-
+    // Code dialog id
+    public static function codeDialogId($dialogId){
+        return ('dialogId'.$dialogId);
+    }
+    // Decode dialog id
+    public static function deccodeDialogId($code){
+        return str_replace('dialogId','',$code);
+    }
+    // Generate rooms array
     public static function generateRoomIds($userId, $dialogs){
         $dIds = ArrayHelper::map($dialogs,'id','id');
-        $userId = ('poprigun_chat#'.$userId);
+        $userId = self::codeUserId($userId);
         $rooms[$userId] = [];
         foreach($dIds as $id){
-            $rooms[$userId][] = ('dialog_id#'.$id);
+            $rooms[$userId][] = self::codeDialogId($id);
         }
 
         return $rooms;

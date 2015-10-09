@@ -31,8 +31,6 @@ Once the extension is installed, simply use it in your code by  :
 
 <?= \poprigun\chat\widgets\StaticChat::widget([
     'template'  =>  'path',
-    'showUserAvatar'    =>  true,
-    'showLastMessage'   =>  true,
 ]);?>
 
 <?= \poprigun\chat\widgets\ChatButton::widget([
@@ -42,6 +40,10 @@ Once the extension is installed, simply use it in your code by  :
         ],
     ]
 )?>
+
+Template
+--------
+Templates build with <a href="http://handlebarsjs.com/" target="_blank">Handlebars</a>
 
 Migration
 ---------
@@ -54,7 +56,7 @@ Main config
          'class' => \poprigun\chat\PChatModule::className(),
          'params' => [
              'pchat-settings' => [
-                 'userModel' => \frontend\models\User::className(), //necessarily
+                 'userModel' => \frontend\models\User::className(),
                  'userAvatarMethod' => [
                      'class' =>\frontend\models\User::className(),
                      'method' =>'avatar',

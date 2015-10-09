@@ -40,7 +40,7 @@ module.exports = function(app,io){
 		});
 		// Somebody left the chat
 		socket.on('disconnect', function() {
-
+			removeFromRoom(this.user);
 			socket.broadcast.to(this.room).emit('leave', {
 				room: this.room,
 				user: this.user
@@ -61,7 +61,6 @@ function findClientsSocket(roomId){
 
 	return rooms[roomId];
 }
-
 // add/create chat rooms
 function createRooms(data){
 
@@ -79,5 +78,15 @@ function createRooms(data){
 			}
 
 		}
+	}
+}
+// remove from chat rooms
+function removeFromRoom(user){
+	for(var room in rooms){
+		index = rooms[room].indexOf(user)
+		if(index){
+			rooms[room].splice(index,1)
+		}
+
 	}
 }

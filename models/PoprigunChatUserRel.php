@@ -12,7 +12,7 @@ use Yii;
  * @property integer $message_id
  * @property integer $userId
  * @property integer $status
- * @property integer $view
+ * @property integer $is_view
  *
  * @property PoprigunChatUser $chatUser
  * @property PoprigunChatMessage $chat
@@ -37,7 +37,7 @@ class PoprigunChatUserRel extends \yii\db\ActiveRecord implements StatusInterfac
     {
         return [
             [['message_id', 'user_id'], 'required'],
-            [['message_id', 'user_id', 'view', 'status'], 'integer'],
+            [['message_id', 'user_id', 'is_view', 'status'], 'integer'],
             [['user_id'], 'exist', 'skipOnError' => false, 'targetClass' => PoprigunChatUser::className(), 'targetAttribute' => ['user_id' => 'user_id']],
             [['message_id'], 'exist', 'skipOnError' => false, 'targetClass' => PoprigunChatMessage::className(), 'targetAttribute' => ['message_id' => 'id']],
         ];
@@ -52,7 +52,7 @@ class PoprigunChatUserRel extends \yii\db\ActiveRecord implements StatusInterfac
             'id' => 'ID',
             'message_id' => 'Message ID',
             'user_id' => 'User ID',
-            'view' => 'View',
+            'is_view' => 'Is View',
             'status' => 'Status',
         ];
     }
@@ -94,7 +94,7 @@ class PoprigunChatUserRel extends \yii\db\ActiveRecord implements StatusInterfac
         if(empty($messageId)){
             return false;
         }
-        return self::updateAll(['view' => self::OLD_MESSAGE],['user_id' => $userId, 'message_id' => $messageId]);
+        return self::updateAll(['is_view' => self::OLD_MESSAGE],['user_id' => $userId, 'message_id' => $messageId]);
     }
 
     /**
@@ -110,7 +110,7 @@ class PoprigunChatUserRel extends \yii\db\ActiveRecord implements StatusInterfac
         if(!empty($messages)){
             foreach($messages as $key => $message){
                 foreach($message->chatUserRel as $messageRel){
-                    if($messageRel->view == self::NEW_MESSAGE && $userId == $messageRel->user_id){
+                    if($messageRel->is_view == self::NEW_MESSAGE && $userId == $messageRel->user_id){
                         $result[$key] = $message->id;
                     }
                 }

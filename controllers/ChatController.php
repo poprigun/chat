@@ -65,19 +65,18 @@ class ChatController extends Controller{
          * @var $dialog PoprigunChatDialog
          */
         $dialogId = Yii::$app->request->get('dialogId');
-        $dialog = PoprigunChatDialog::findOne(['id' => $dialogId]);
+        $dialog = PoprigunChatDialog::findOne(['id' => Chat::deccodeDialogId($dialogId)]);
 
         $offset = Yii::$app->request->get('offset');
         $old = Yii::$app->request->get('old',false);
         $count = Yii::$app->request->get('count',false);
+        $messageCount = Yii::$app->request->get('message_count',false);
 
         if(null == $dialog || !$dialog->isAllowed($this->user->id)){
             throw new \BadMethodCallException;
         }
 
-        $limit = empty(Yii::$app->session->get(Chat::getSessionName())['message_count'])
-            ? Chat::$defaultCount
-            : Yii::$app->session->get(Chat::getSessionName())['message_count'];
+        $limit = !$messageCount ? Chat::$defaultCount : $messageCount;
 
         if($old){
             $messages = $dialog->getMessages($limit, $offset);
@@ -154,7 +153,6 @@ class ChatController extends Controller{
     public function getMessageArray($dialog){
 
         $result = [];
-        $options = Yii::$app->session->get(Chat::getSessionName());
         foreach($dialog as $key => $message){
             $tempArray = [];
             /**
@@ -166,11 +164,8 @@ class ChatController extends Controller{
             $tempArray['date'] = strtotime($message->created_at);
             $tempArray['message'] = $message->message;
             $tempArray['message_id'] = $message->id;
-            $tempArray['dialog_id'] = $message->dialog_id;
-
-            if(!isset($options['showAvatar']) || $options['showAvatar'] == true){
-                $tempArray['user_avatar'] =  $message->userAvatar;
-            }
+            $tempArray['dialog_id'] = Chat::codeDialogId($message->dialog_id);
+            $tempArray['user_avatar'] =  $message->userAvatar;
             $result[] = $tempArray;
         }
 
@@ -180,26 +175,19 @@ class ChatController extends Controller{
     public function getDialogsArray($dialogs){
 
         $result = [];
-        $options = Yii::$app->session->get(Chat::getSessionName());
         if(!empty($dialogs)){
 
             foreach($dialogs as $key => $dialog){
                 /**
                  * @var $dialog PoprigunChatDialog
                  */
-                $result[$key]['dialog_id'] = $dialog->id;
+                $result[$key]['dialog_id'] = Chat::codeDialogId($dialog->id);
                 $result[$key]['user_id'] = $dialog->user_id;
                 $result[$key]['user_name'] = $dialog->userName;
                 $result[$key]['new_count'] = $dialog->newCount;
-
-                if(!isset($options['showAvatar']) || $options['showAvatar'] == true){
-                    $result[$key]['image'] = $dialog->userAvatar;
-                }
-
-                if(!isset($options['showLastMessage']) || $options['showLastMessage'] == true){
-                    $lastMessages = $dialog->messages;
-                    $result[$key]['last_message'] =  !empty($lastMessages[0]->message) ? $lastMessages[0]->message : '';
-                }
+                $result[$key]['image'] = $dialog->userAvatar;
+             //   $lastMessages = $dialog->messages;
+             //   $result[$key]['last_message'] =  !empty($lastMessages[0]->message) ? $lastMessages[0]->message : '';
             }
         }
 

@@ -45,6 +45,7 @@ class PoprigunChatMessage extends ActiveRecord implements StatusInterface
         return [
             [['user_id', 'message'], 'required'],
             ['dialog_id', 'required', 'on' => 'dialog'],
+            ['receiverId', 'valdateReceiver'],
             [['dialog_id', 'user_id', 'receiverId' , 'messageType'], 'integer'],
             [['updated_at', 'created_at'], 'safe'],
             [['message'], 'string', 'skipOnEmpty' => false],
@@ -66,6 +67,23 @@ class PoprigunChatMessage extends ActiveRecord implements StatusInterface
             'updated_at' => 'Updated At',
             'created_at' => 'Created At',
         ];
+    }
+
+    /**
+     * Validate receiver
+     *
+     * @param $attribute
+     * @param $params
+     */
+    public function valdateReceiver($attribute, $params){
+
+        if($this->messageType == self::MESSAGE_TO_USER){
+            $this->receiverId = Chat::decodeUserId($this->receiverId);
+        }elseif($this->messageType == self::MESSAGE_TO_DIALOG){
+            $this->receiverId = Chat::deccodeDialogId($this->receiverId);
+        }else{
+            $this->addError($attribute,'Incorrect receiver');
+        }
     }
 
     /**
@@ -123,7 +141,7 @@ class PoprigunChatMessage extends ActiveRecord implements StatusInterface
      */
     public function getUserAvatar(){
 
-        $userAvatar = Yii::$app->getSession()->get(Chat::getSessionName())['assetUrl'].Chat::$defaultUserAvatar;
+        $userAvatar = '';
         if(!empty($this->pchatSettings['userAvatarMethod'])){
 
             $avatarMethod = $this->pchatSettings['userAvatarMethod'];

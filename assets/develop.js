@@ -62,9 +62,12 @@ PoprigunChat = function(options) {
         if(send){
             self.settings.entryField.on('keypress',function(e){
                 var dialogId =  self.settings.parentMessage.data('dialog');
-                self.socket.emit('typing', {user: 'poprigun_chat#'+self.settings.userId, cid:'dialog_id#'+dialogId});
+                self.socket.emit('typing', {
+                    user: self.settings.userId,
+                    cid: dialogId
+                });
                 if(e.keyCode == 13){
-                    self.form.submit();
+                    self.settings.form.submit();
                 }
             });
         }
@@ -93,38 +96,18 @@ PoprigunChat = function(options) {
     }
     // add item
     function addItem(data, source, parent, old){
-        var object = source.clone();
-        //console.log(data)
-        $.each(data, function(key, val){
-
-            var $control = object.find('[data-block-'+key+']');
-
-            if($control){
-                $control.each(function(id, block){
-                    var attr = $(block).data('block-'+key);
-                    if(attr){
-                        if(attr == 'html'){
-                            $(block).html(val)
-                        }
-                        else{
-                            $(block).attr(attr, val);
-                        }
-                    }
-                });
-            }
-        });
-
+        var template = Handlebars.compile( source.html() );
         if(old == undefined){
             if(self.settings.addNewMessage == 'append'){
-                parent.append(object.html());
+                parent.append( template(data) );
             }else{
-                parent.prepend(object.html());
+                parent.prepend( template(data) );
             }
         }else{
             if(self.settings.addOldMessage == 'prepend'){
-                parent.prepend(object.html());
+                parent.prepend( template(data) );
             }else{
-                parent.append(object.html());
+                parent.append( template(data) );
             }
         }
     }
@@ -143,10 +126,8 @@ PoprigunChat = function(options) {
                 self.sendCompleteCallback(xhr,textStatus);
             },
             success: function (data) {
-                $.each(data,function(i,j){
-                    addItem(j, self.settings.sourceMessage, self.settings.parentMessage);
-                    self.socket.emit('send', {message: data, cid: self.settings.cid});
-                });
+                addItem(data, self.settings.sourceMessage, self.settings.parentMessage);
+                self.socket.emit('send', {message: data, cid: self.settings.cid});
                 if(self.settings.clearEntryField){
                     self.settings.entryField.val('');
                 }
@@ -202,9 +183,7 @@ PoprigunChat = function(options) {
         }
 
         self.load(options,function(self,data){
-            $.each(data,function(i,j) {
-                addItem(j, self.settings.sourceMessage, self.settings.parentMessage);
-            });
+            addItem(data, self.settings.sourceMessage, self.settings.parentMessage);
         });
     }
     // load old messages
@@ -219,11 +198,8 @@ PoprigunChat = function(options) {
             if (data.length == 0) {
                 self.settings.loaded = true;
             } else {
-                $.each(data,function(i,j) {
-                    addItem(j, self.settings.sourceMessage, self.settings.parentMessage, true);
-                })
+                addItem(data, self.settings.sourceMessage, self.settings.parentMessage, true);
             }
-            $('.poprigun-chat-receiver-id').val(dialogId);
         });
     }
     // load dialogs
@@ -233,11 +209,8 @@ PoprigunChat = function(options) {
         if(options.loadUrl == undefined){
             options.loadUrl = self.settings.urlGetDialogs;
         }
-
         self.load(options, function(self, data){
-            $.each(data,function(i,j) {
-                addItem(j, self.settings.sourceDialog, self.settings.parentDialog);
-            })
+            addItem(data, self.settings.sourceDialog, self.settings.parentDialog);
         });
     }
 
@@ -316,7 +289,10 @@ PoprigunChat = function(options) {
             dialogId : dialogId,
         },true)
         self.settings.receiverField.val(dialogId);
-        self.socket.emit('join', {user: 'poprigun_chat#'+self.settings.userId, cid:'dialog_id#'+dialogId});
+        self.socket.emit('join', {
+            user: self.settings.userId,
+            cid: dialogId
+        });
     })
     // delete dialog
     $(document).on('click',self.settings.deleteDialog,function(){
@@ -328,22 +304,22 @@ PoprigunChat = function(options) {
         //    }
         //})
     });
-
+    //some user in chat
     self.socket.on('peopleInChat',function(data){
         console.log('peopleInChat')
         console.log(data)
     })
-
+    //user typing text
     self.socket.on('typing',function(data){
         console.log('typing')
         console.log(data)
     })
-
+    //user leave
     self.socket.on('leave',function(data){
         console.log('педрила ушел');
         console.log(data);
     });
-
+    //user receive message
     self.socket.on('receive', function(data){
         console.log(data)
     });

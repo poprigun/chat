@@ -26,7 +26,7 @@ class ChatButton extends Widget{
     public function registerAssets(){
 
         $model =  new PoprigunChatMessage();
-        $model->receiverId = $this->options['receiver_id'];
+        $model->receiverId = Chat::decodeUserId($this->options['receiver_id']);
         $model->messageType = PoprigunChatMessage::MESSAGE_TO_USER;
 
         echo $this->renderFile($this->template,[

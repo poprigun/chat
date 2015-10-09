@@ -1,4 +1,4 @@
-<div id="poprigun-chat" data-url="<?=$options['socketUrl']?>" data-rooms='<?=json_encode($rooms)?>' data-user="<?=Yii::$app->user->id?>">
+<div id="poprigun-chat" data-rooms='<?=json_encode($rooms)?>' data-url="<?=$options['socketUrl']?>" data-message-count="<?=$options['count']?>" data-user="<?=$options['userId']?>">
     <div class="col-sm-12">
         <div class="col-sm-4">
             <div class="panel panel-primary">
@@ -24,6 +24,7 @@
                             'id' => 'poprigun-chat-send-form',
                         ]);
                         $form->successCssClass = '';
+                        $form->enableClientValidation = false;
                         ?>
 
                         <?= $form->field($model,'message')
@@ -60,36 +61,40 @@
     </div>
 </div>
 
-<div id="poprigun-chat-dialog" class="hide">
-    <li class="media poprigun-chat-dialog-id" data-block-dialog_id="data-dialog">
+<div id="poprigun-chat-dialog" class="hide" type="text/x-handlebars-template">
+{{#each this}}
+    <li class="media poprigun-chat-dialog-id" data-dialog="{{dialog_id}}">
         <div class="media-message">
             <div class="media">
                 <a class="pull-left" href="#">
-                    <img data-block-image="src" class="media-object img-circle" style="height:40px;" src="">
+                    <img class="media-object img-circle" style="height:40px;" src="{{image}}">
                 </a>
                 <div class="media-body">
-                    <h5 data-block-user_name="html"></h5>
-                    <small data-block-last_message="html" class="text-muted"></small>
+                    <h5>{{user_name}}</h5>
+                    <small class="text-muted">{{last_message}}</small>
                 </div>
             </div>
         </div>
     </li>
+{{/each}}
 </div>
 
-<div id="poprigun-chat-message" class="hide">
-    <li class="media" data-block-message_id="data-message">
+<div id="poprigun-chat-message" class="hide" type="text/x-handlebars-template">
+{{#each this}}
+    <li class="media" data-message="{{message_id}}">
         <div class="media-message">
             <div class="media">
-                <a data-block-link="href" class="pull-left" href="#">
-                    <img data-block-user_avatar="src" class="media-object chat-image" src="">
+                <a class="pull-left" href="{{link}}">
+                    <img class="media-object chat-image" src="{{user_avatar}}">
                 </a>
                 <div class="media-body">
-                    <div data-block-message="html" class="message-text"></div>
+                    <div class="message-text">{{message}}</div>
                     <br>
-                    <small data-block-user_name="html" class="text-muted"></small>
+                    <small class="text-muted">{{user_name}}</small>
                     <hr>
                 </div>
             </div>
         </div>
     </li>
+{{/each}}
 </div>

@@ -258,7 +258,7 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
             ->innerJoinWith('chatUserRel')
             //->innerJoinWith('chatUserRel.chatUser')
             ->where([PoprigunChatMessage::tableName().'.dialog_id' => $this->id])
-            ->andWhere([PoprigunChatUserRel::tableName().'.view' => $view])
+            ->andWhere([PoprigunChatUserRel::tableName().'.is_view' => $view])
             ->andWhere([PoprigunChatUserRel::tableName().'.status' => StatusInterface::STATUS_ACTIVE])
             ->andWhere([PoprigunChatUserRel::tableName().'.user_id'=>Yii::$app->user->id])
             ->orderBy([PoprigunChatMessage::tableName().'.id' => SORT_DESC]);
@@ -299,11 +299,11 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
                 $rel = new PoprigunChatUserRel([
                     'message_id' => $poprigunChat->id,
                     'user_id' => $user->user_id,
-                    'view' => PoprigunChatUserRel::NEW_MESSAGE,
+                    'is_view' => PoprigunChatUserRel::NEW_MESSAGE,
                     'status' => PoprigunChatUserRel::STATUS_ACTIVE,
                 ]);
                 if($senderId == $user->id){
-                    $rel->view = PoprigunChatUserRel::OLD_MESSAGE;
+                    $rel->is_view = PoprigunChatUserRel::OLD_MESSAGE;
                 }
 
                 if(!$rel->save()){
@@ -324,7 +324,7 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
 
         $query = $this->hasMany(PoprigunChatMessage::className(), ['dialog_id' => 'id'])
             ->innerJoinWith('chatUserRel')
-            ->andWhere([PoprigunChatUserRel::tableName().'.view' => PoprigunChatUserRel::NEW_MESSAGE]);
+            ->andWhere([PoprigunChatUserRel::tableName().'.is_view' => PoprigunChatUserRel::NEW_MESSAGE]);
         if(null !== $dialogId){
             $query->andWhere([PoprigunChatDialog::tableName().'.id' => $dialogId]);
         }
@@ -368,7 +368,6 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
         }
 
         $image = [];
-        $userAvatar = Yii::$app->getSession()->get(Chat::getSessionName())['assetUrl'].Chat::$defaultUserAvatar;
         $avatarMethod = $this->pchatSettings['userAvatarMethod'];
         foreach($users as $user){
             if($user->user_id != Yii::$app->user->id){
@@ -379,11 +378,7 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
                     $tempAvatar = $this->user->$avatarMethod['relation']->$avatarMethod['method'];
                 }
 
-                if(!empty($tempAvatar)){
-                    $userAvatar = $tempAvatar;
-                }
-
-                $image[] = $userAvatar;
+                $image[] = $tempAvatar;
             }
         }
 
