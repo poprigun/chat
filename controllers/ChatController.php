@@ -65,9 +65,9 @@ class ChatController extends Controller{
          * @var $dialog PoprigunChatDialog
          */
         $dialogId = Yii::$app->request->get('dialogId');
-        $dialog = PoprigunChatDialog::findOne(['id' => Chat::deccodeDialogId($dialogId)]);
+        $dialog = PoprigunChatDialog::findOne(['id' => Chat::decodeDialogId($dialogId)]);
 
-        $offset = Yii::$app->request->get('offset');
+        $messageId = Yii::$app->request->get('messageId');
         $old = Yii::$app->request->get('old',false);
         $count = Yii::$app->request->get('count',false);
         $messageCount = Yii::$app->request->get('message_count',false);
@@ -79,19 +79,17 @@ class ChatController extends Controller{
         $limit = !$messageCount ? Chat::$defaultCount : $messageCount;
 
         if($old){
-            $messages = $dialog->getMessages($limit, $offset);
+            $messages = $dialog->getMessages($limit, $messageId,true);
         }else{
-            $messages = $dialog->getMessages(empty($offset) ? $limit : null, $offset);
+            $messages = $dialog->getMessages(empty($messageId) ? $limit : null, $messageId);
         }
 
         PoprigunChatUserRel::setReadMessage($this->user->id, PoprigunChatUserRel::getUnreadMessage($this->user->id,$messages));
         $json = $this->getMessageArray($messages);
-
         if(!empty($json)){
-            if($offset == null){
-                krsort($json);
-                $json = array_values($json);
-            }
+            krsort($json);
+            $json = array_values($json);
+
             if($count){
                 $json['count'] = $dialog->getPoprigunChat()->count();
             }
@@ -134,7 +132,7 @@ class ChatController extends Controller{
     */
     public function actionDeleteDialog($dialogId){
         return [
-            'status' => PoprigunChatDialog::deleteDialog($dialogId) ? 'success':'error'
+            'status' => PoprigunChatDialog::deleteDialog(Chat::decodeDialogId($dialogId)) ? 'success':'error'
         ];
     }
 
@@ -186,8 +184,8 @@ class ChatController extends Controller{
                 $result[$key]['user_name'] = $dialog->userName;
                 $result[$key]['new_count'] = $dialog->newCount;
                 $result[$key]['image'] = $dialog->userAvatar;
-             //   $lastMessages = $dialog->messages;
-             //   $result[$key]['last_message'] =  !empty($lastMessages[0]->message) ? $lastMessages[0]->message : '';
+                $lastMessages = $dialog->messages;
+                $result[$key]['last_message'] =  !empty($lastMessages[0]->message) ? $lastMessages[0]->message : '';
             }
         }
 

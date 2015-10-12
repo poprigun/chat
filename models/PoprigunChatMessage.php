@@ -80,7 +80,7 @@ class PoprigunChatMessage extends ActiveRecord implements StatusInterface
         if($this->messageType == self::MESSAGE_TO_USER){
             $this->receiverId = Chat::decodeUserId($this->receiverId);
         }elseif($this->messageType == self::MESSAGE_TO_DIALOG){
-            $this->receiverId = Chat::deccodeDialogId($this->receiverId);
+            $this->receiverId = Chat::decodeDialogId($this->receiverId);
         }else{
             $this->addError($attribute,'Incorrect receiver');
         }

@@ -3,6 +3,7 @@
 namespace poprigun\chat\widgets;
 
 use poprigun\chat\ChatAssets;
+use poprigun\chat\ChatWithoutNodeAssets;
 use poprigun\chat\models\PoprigunChatDialog;
 use poprigun\chat\models\PoprigunChatMessage;
 use Yii;
@@ -17,6 +18,7 @@ class Chat extends Widget{
     public static $defaultUserAvatar = '/img/avatar.png';
     public static $defaultUserName = 'Annonimus';
     public static $defaultCount = 10;
+    public $node = false;
     /**
      * @var string template path
      */
@@ -45,7 +47,11 @@ class Chat extends Widget{
     public function registerAssets(){
 
         $view = $this->getView();
-        ChatAssets::register($view);
+        if($this->node){
+            ChatAssets::register($view);
+        }else{
+            ChatWithoutNodeAssets::register($view);
+        }
 
         echo $this->renderFile($this->template,[
             'model' => new PoprigunChatMessage(),
@@ -66,7 +72,7 @@ class Chat extends Widget{
         return ('dialogId'.$dialogId);
     }
     // Decode dialog id
-    public static function deccodeDialogId($code){
+    public static function decodeDialogId($code){
         return str_replace('dialogId','',$code);
     }
     // Generate rooms array

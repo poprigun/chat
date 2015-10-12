@@ -31,6 +31,7 @@ Once the extension is installed, simply use it in your code by  :
 
 <?= \poprigun\chat\widgets\StaticChat::widget([
     'template'  =>  'path',
+    'node => true,
 ]);?>
 
 <?= \poprigun\chat\widgets\ChatButton::widget([

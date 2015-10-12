@@ -139,7 +139,7 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
      * @param integer $senderId (id sender user)
      * @param integer $receiverId (id receiver user)
      * @param null|string $title
-     * @return PoprigunChatDialog
+     * @return PoprigunChatDialogo
      */
     public static function isUserDialogExist($senderId, $receiverId, $type = self::TYPE_PERSONAL){
 
@@ -248,12 +248,13 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
      * Get messages
      *
      * @param null $limit
-     * @param null $offset
+     * @param null $messageId
+     * @param null $oldMessage
      * @param array $view
      * @return array|\yii\db\ActiveRecord[]
      *
      */
-    public function getMessages($limit = null, $offset = null, $view = [PoprigunChatUserRel::NEW_MESSAGE, PoprigunChatUserRel::OLD_MESSAGE]){
+    public function getMessages($limit = null, $messageId = null, $oldMessage = false, $view = [PoprigunChatUserRel::NEW_MESSAGE, PoprigunChatUserRel::OLD_MESSAGE]){
         $query = PoprigunChatMessage::find()
             ->innerJoinWith('chatUserRel')
             //->innerJoinWith('chatUserRel.chatUser')
@@ -265,10 +266,18 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
         if(null != $limit){
             $query->limit($limit);
         }
-        if(null != $offset){
-            $query->offset($offset);
+
+        if(null != $messageId){
+            if($oldMessage){
+                $query->andWhere(['<',PoprigunChatMessage::tableName().'.id',$messageId]);
+            }else{
+                $query->andWhere(['>',PoprigunChatMessage::tableName().'.id',$messageId]);
+            }
+
+        }else{
+
         }
-        return $query->all();
+        return $query->indexBy('id')->all();
     }
 
     public static function newMessage($senderId, $receiverId){

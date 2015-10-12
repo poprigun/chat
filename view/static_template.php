@@ -63,7 +63,7 @@
 
 <div id="poprigun-chat-dialog" class="hide" type="text/x-handlebars-template">
 {{#each this}}
-    <li class="media poprigun-chat-dialog-id" data-dialog="{{dialog_id}}">
+    <li class="media poprigun-chat-dialog-child poprigun-chat-dialog-id" data-dialog="{{dialog_id}}">
         <div class="media-message">
             <div class="media">
                 <a class="pull-left" href="#">
@@ -81,7 +81,7 @@
 
 <div id="poprigun-chat-message" class="hide" type="text/x-handlebars-template">
 {{#each this}}
-    <li class="media" data-message="{{message_id}}">
+    <li class="media poprigun-chat-message-child" data-message="{{message_id}}">
         <div class="media-message">
             <div class="media">
                 <a class="pull-left" href="{{link}}">
