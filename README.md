@@ -10,13 +10,13 @@ The preferred way to install this extension is through [composer](http://getcomp
 Either run
 
 ```
-php composer.phar require poprigun/chat "dev-dev"
+php composer.phar require poprigun/chat "*"
 ```
 
 or add
 
 ```
-"poprigun/chat": "dev-dev"
+"poprigun/chat": "*"
 ```
 
 to the require section of your `composer.json` file.
