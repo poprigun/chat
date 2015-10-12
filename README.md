@@ -32,6 +32,11 @@ Once the extension is installed, simply use it in your code by  :
 <?= \poprigun\chat\widgets\StaticChat::widget([
     'template'  =>  'path',
     'node => true,
+    'options' => [
+        'dialogTime' => 0,
+        'messageTime' => 0,
+        'form' => '#poprigun-chat-send-form',
+    ],
 ]);?>
 
 <?= \poprigun\chat\widgets\ChatButton::widget([
@@ -41,6 +46,13 @@ Once the extension is installed, simply use it in your code by  :
         ],
     ]
 )?>
+
+```js```
+
+$(window).ready(function(){
+    poprigunChat.loadDialogs();
+    poprigunChat.listenServerDialog();
+});
 
 Template
 --------

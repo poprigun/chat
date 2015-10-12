@@ -11,6 +11,7 @@ use yii\base\Widget;
 use yii\helpers\ArrayHelper;
 use yii\helpers\Html;
 use yii\helpers\Url;
+use yii\web\View;
 
 class Chat extends Widget{
 
@@ -26,7 +27,7 @@ class Chat extends Widget{
     /**
      * @var array widget plugin options
      */
-    protected $options = [];
+    public $options = [];
     public $count;
     public $socketUrl;
 
@@ -52,6 +53,12 @@ class Chat extends Widget{
         }else{
             ChatWithoutNodeAssets::register($view);
         }
+
+        $script = '
+             poprigunChat = new PoprigunChat('.json_encode($this->options).');
+        ';
+
+        $view->registerJs($script,View::POS_END);
 
         echo $this->renderFile($this->template,[
             'model' => new PoprigunChatMessage(),

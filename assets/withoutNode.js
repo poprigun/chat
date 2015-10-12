@@ -349,17 +349,4 @@ PoprigunChat = function(options) {
             }
         })
     });
-
 };
-
-$(window).ready(function(){
-    poprigunChat = new PoprigunChat({
-        form: '#poprigun-chat-send-form',
-        uid: $('#poprigun-chat').data('rooms'),
-        userId: $('#poprigun-chat').data('user'),
-        dialogTime: 0,
-        messageTime: 0
-    });
-    poprigunChat.loadDialogs();
-    poprigunChat.listenServerDialog();
-});
