@@ -18,7 +18,7 @@ use yii\widgets\ActiveForm;
 
 class ChatController extends Controller{
 
-    private $user;
+    public $user;
 
     public function init(){
         $this->user = Yii::$app->user->identity;

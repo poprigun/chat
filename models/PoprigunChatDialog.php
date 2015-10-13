@@ -138,8 +138,8 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
      *
      * @param integer $senderId (id sender user)
      * @param integer $receiverId (id receiver user)
-     * @param null|string $title
-     * @return PoprigunChatDialogo
+     * @param integer $type
+     * @return PoprigunChatDialog
      */
     public static function isUserDialogExist($senderId, $receiverId, $type = self::TYPE_PERSONAL){
 
@@ -152,7 +152,7 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
                 PoprigunChatUser::tableName().'.user_id' => $senderId,
                 PoprigunChatUser::tableName().'.user_id' => $receiverId,
             ])
-            ->andWhere([PoprigunChatDialog::tableName().'.type' => self::TYPE_PERSONAL])
+            ->andWhere([PoprigunChatDialog::tableName().'.type' => $type])
             ->one();
 
         return !empty($dialog) ? $dialog : false;
