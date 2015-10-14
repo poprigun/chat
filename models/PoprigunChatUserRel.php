@@ -61,7 +61,7 @@ class PoprigunChatUserRel extends \yii\db\ActiveRecord implements StatusInterfac
      * @return \yii\db\ActiveQuery
      */
     public function getChatUser(){
-        return $this->hasOne(PoprigunChatUser::className(), ['id' => 'user_id']);
+        return $this->hasOne(PoprigunChatUser::className(), ['user_id' => 'user_id']);
     }
 
     /**

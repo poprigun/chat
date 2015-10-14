@@ -12,6 +12,49 @@ Either run
 ```
 php composer.phar require poprigun/chat "*"
 ```
+use frontend\helpers\FormatterHelper;
+use frontend\models\Audio;
+use yii\data\ArrayDataProvider;
+
+class AudioController extends Controller{
+
+    use Upload;
+
+    /**
+     * Edit user audio
+     * @return string
+     */
+    public function actionEdit(){
+
+        $provider = new ArrayDataProvider([
+            'key' => 'id',
+            'allModels' => Audio::find()->innerJoinWith('user.userAudios')->all(),
+            'sort' => [
+              'attributes' => ['created_at'],
+            ],
+            'pagination' => [
+              'pageSize' => Settings::getSettingValue('audio_count'),
+            ],
+        ]);
+
+        return $this->render('/edit/editAudio',[
+            'user' => $this->user,
+            'audioData' => [
+                'data' => FormatterHelper::getEditAudioFormatter($provider),
+            ],
+        ]);
+    }
+
+    public function actionUploadPopup(){
+
+        $modelAudio = new AudioForm(['scenario' => 'create']);
+        return $this->renderAjax('/popups/audioForm',[
+            'modelAudio' => $modelAudio,
+        ]);
+    }
+
+}
+
 
 or add
 
