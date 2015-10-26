@@ -152,7 +152,7 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
                 PoprigunChatUser::tableName().'.user_id' => $senderId,
                 PoprigunChatUser::tableName().'.user_id' => $receiverId,
             ])
-            ->andWhere([PoprigunChatDialog::tableName().'.type' => self::TYPE_PERSONAL])
+            ->andWhere([PoprigunChatDialog::tableName().'.type' => $type])
             ->one();
 
         return !empty($dialog) ? $dialog : false;
@@ -172,7 +172,7 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
         $dialog = new PoprigunChatDialog();
         $dialog->user_id = $ownerId;
         $dialog->title = $title;
-        $dialog->type = self::TYPE_PERSONAL;
+        $dialog->type = $type;
         $dialog->save();
 
         $dialog->setUserToDialog($ownerId);

@@ -20,7 +20,7 @@ class ChatButton extends Widget{
 
     public function initOptions(){
 
-        $this->options['text'] = empty($options['text']) ? 'Message' : $options['text'];
+        $this->options['text'] = empty($this->options['text']) ? 'Message' : $this->options['text'];
     }
 
     public function registerAssets(){

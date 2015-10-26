@@ -184,8 +184,8 @@ class ChatController extends Controller{
                 $result[$key]['user_name'] = $dialog->userName;
                 $result[$key]['new_count'] = $dialog->newCount;
                 $result[$key]['image'] = $dialog->userAvatar;
-                $lastMessages = $dialog->messages;
-                $result[$key]['last_message'] =  !empty($lastMessages[0]->message) ? $lastMessages[0]->message : '';
+                $lastMessages = $dialog->getMessages(1);
+                $result[$key]['last_message'] =  isset(current($lastMessages)->message) ? current($lastMessages)->message : '';
             }
         }
 
