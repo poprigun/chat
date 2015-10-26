@@ -117,7 +117,6 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
      * @param integer $senderId (id sender user)
      * @param integer $receiverId (id receiver user)
      * @param null|string $title
-     * @param integer$type
      * @return PoprigunChatDialog
      */
     public static function getMessageDialog($senderId, $receiverId, $title = null, $type =  self::TYPE_PERSONAL){
@@ -125,7 +124,7 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
         if($senderId == $receiverId)
             throw new \BadFunctionCallException('The same sender and receiver id');
 
-        $dialog = self::isUserDialogExist($senderId,$receiverId,$type);
+        $dialog = self::isUserDialogExist($senderId,$receiverId,$title,$type);
 
         if(!$dialog){
             $dialog = self::createDialog($senderId,$receiverId,$title,$type);
@@ -139,8 +138,8 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
      *
      * @param integer $senderId (id sender user)
      * @param integer $receiverId (id receiver user)
-     * @param integer $type
-     * @return PoprigunChatDialog
+     * @param null|string $title
+     * @return PoprigunChatDialogo
      */
     public static function isUserDialogExist($senderId, $receiverId, $type = self::TYPE_PERSONAL){
 
@@ -153,7 +152,7 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
                 PoprigunChatUser::tableName().'.user_id' => $senderId,
                 PoprigunChatUser::tableName().'.user_id' => $receiverId,
             ])
-            ->andWhere([PoprigunChatDialog::tableName().'.type' => $type])
+            ->andWhere([PoprigunChatDialog::tableName().'.type' => self::TYPE_PERSONAL])
             ->one();
 
         return !empty($dialog) ? $dialog : false;
@@ -173,10 +172,8 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
         $dialog = new PoprigunChatDialog();
         $dialog->user_id = $ownerId;
         $dialog->title = $title;
-        $dialog->type = $type;
-        if(!$dialog->save()){
-            throw new \BadMethodCallException;
-        }
+        $dialog->type = self::TYPE_PERSONAL;
+        $dialog->save();
 
         $dialog->setUserToDialog($ownerId);
         if($type != self::TYPE_PERSONAL && is_array($userId)){
@@ -252,7 +249,7 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
      *
      * @param null $limit
      * @param null $messageId
-     * @param bool $oldMessage
+     * @param null $oldMessage
      * @param array $view
      * @return array|\yii\db\ActiveRecord[]
      *
@@ -260,6 +257,7 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
     public function getMessages($limit = null, $messageId = null, $oldMessage = false, $view = [PoprigunChatUserRel::NEW_MESSAGE, PoprigunChatUserRel::OLD_MESSAGE]){
         $query = PoprigunChatMessage::find()
             ->innerJoinWith('chatUserRel')
+            //->innerJoinWith('chatUserRel.chatUser')
             ->where([PoprigunChatMessage::tableName().'.dialog_id' => $this->id])
             ->andWhere([PoprigunChatUserRel::tableName().'.is_view' => $view])
             ->andWhere([PoprigunChatUserRel::tableName().'.status' => StatusInterface::STATUS_ACTIVE])

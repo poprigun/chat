@@ -1,4 +1,4 @@
-<div id="poprigun-chat" data-rooms='<?=json_encode($rooms)?>' data-url="<?=$options['socketUrl']?>" data-message-count="<?=$options['count']?>" data-user="<?=$options['userId']?>">
+<div id="poprigun-chat" data-rooms='<?=json_encode($rooms)?>'>
     <div class="col-sm-12">
         <div class="col-sm-4">
             <div class="panel panel-primary">

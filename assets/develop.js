@@ -23,14 +23,18 @@ PoprigunChat = function(options) {
     this.settings.addNewMessage = 'append';
     this.settings.addOldMessage = 'prepend';
 
+    this.settings.scrollBox = '.poprigun-chat-message-ajax';
+
     this.settings.entryField = '.poprigun-chat-form-message';
     this.settings.receiverField = '.poprigun-chat-receiver-id';
     this.settings.deleteDialog = '#poprigun-dialog-delete';
 
     this.settings.sourceDialog = '#poprigun-chat-dialog';
     this.settings.parentDialog = '#poprigun-chat-dialog-block';
+
     this.settings.sourceMessage = '#poprigun-chat-message';
     this.settings.parentMessage = '#poprigun-chat-message-block';
+    this.settings.childrenMessage = '.poprigun-chat-message-child';
 
     this.settings.urlSocket = 'http://127.0.0.1:8080';
     this.settings.urlGetDialogs = '/poprigun_chat/chat/get-dialogs';
@@ -76,7 +80,7 @@ PoprigunChat = function(options) {
     function buidlWrapper(){
         self.settings.form = $(self.settings.form);
 
-        self.settings.deleteDialog  = $(self.settings.deleteDialog);
+        //self.settings.deleteDialog  = $(self.settings.deleteDialog);
 
         self.settings.entryField  = $(self.settings.entryField);
         self.settings.receiverField  = $(self.settings.receiverField);
@@ -213,7 +217,6 @@ PoprigunChat = function(options) {
             addItem(data, self.settings.sourceDialog, self.settings.parentDialog);
         });
     }
-
     // complete send callback
     this.sendCompleteCallback = function (xhr, textStatus) {
         if( self.settings.callback.sendCompleteCallback != undefined){
@@ -244,7 +247,6 @@ PoprigunChat = function(options) {
             self.settings.callback.sendErrorCallback(xhr,textStatus);
         }
     }
-
     // complete load callback
     this.loadCompleteCallback = function (xhr, textStatus) {
         if( self.settings.callback.loadCompleteCallback != undefined){
@@ -270,14 +272,13 @@ PoprigunChat = function(options) {
             self.settings.callback.loadErrorCallback(xhr,textStatus);
         }
     }
-
     // return first message object
     this.firstMessage = function () {
-        return self.settings.form.find(self.settings.parentMessage + ':first-child');
+        return self.settings.parentMessage.find(self.settings.childrenMessage + ':first-child');
     }
     // return last message object
     this.lastMessage = function () {
-        return self.settings.form.find(self.settings.parentMessage + ':last-child');
+        return self.settings.parentMessage.find(self.settings.childrenMessage+ ':last-child');
     }
     // open dialog messages
     self.settings.parentDialog.on('click','> *',function(event){
@@ -294,15 +295,16 @@ PoprigunChat = function(options) {
             cid: dialogId
         });
     })
-    // delete dialog
+    //delete dialog
     $(document).on('click',self.settings.deleteDialog,function(){
-        //var dialogId =  self.settings.parentMessage.data('dialog');
-        //$.get(self.settings.urlDeleteDialog, {'dialogId': dialogId}, function(data){
-        //
-        //    if(data.status == 'success'){
-        //        self.settings.parentDialog.find('[data-dialog='+dialogId+']').trigger('click');
-        //    }
-        //})
+        var dialogId = self.settings.parentMessage.data('dialog');
+        $.get(self.settings.urlDeleteDialog, {'dialogId': dialogId}, function(data){
+            if(data.status == 'success'){
+                self.messageOldCount = 0;
+                self.settings.parentMessage.data('messages',0);
+                self.settings.parentDialog.find('[data-dialog='+dialogId+']').trigger('click');
+            }
+        })
     });
     //some user in chat
     self.socket.on('peopleInChat',function(data){
@@ -324,13 +326,31 @@ PoprigunChat = function(options) {
         console.log(data)
     });
 
+    // scroll messages
+    function scrollBlock() {
+
+        var scroll = self.settings.scrollBox.scrollTop();
+        var height = self.settings.scrollBox.height();
+
+        if (height + scroll == height) {
+            var message = self.firstMessage();
+            var dialogId = self.settings.parentMessage.data('dialog');
+
+            self.loadOldMessage({
+                dialogId: dialogId,
+                messageId : message.data('message'),
+                old : true
+            });
+        }
+    }
+
 };
 
 $(window).ready(function(){
-    poprigunChat = new PoprigunChat({
-        form: '#poprigun-chat-send-form',
-        uid: $('#poprigun-chat').data('rooms'),
-        userId: $('#poprigun-chat').data('user')
-    });
-    poprigunChat.loadDialogs();
+    //poprigunChat = new PoprigunChat({
+    //    form: '#poprigun-chat-send-form',
+    //    uid: $('#poprigun-chat').data('rooms'),
+    //    userId: $('#poprigun-chat').data('user')
+    //});
+    //poprigunChat.loadDialogs();
 });

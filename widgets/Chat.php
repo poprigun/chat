@@ -42,13 +42,15 @@ class Chat extends Widget{
 
         $this->options['count'] = isset($this->count) ? $this->count : self::$defaultCount;
         $this->options['userId'] = self::codeUserId(Yii::$app->user->id);
-        $this->options['socketUrl'] = isset($this->socketUrl) ? $this->count : 'http://'.$_SERVER['SERVER_ADDR'].':8080';
+
     }
 
     public function registerAssets(){
 
         $view = $this->getView();
         if($this->node){
+            $this->options['rooms'] = self::generateRoomIds(Yii::$app->user->id,PoprigunChatDialog::getUserDialogs(Yii::$app->user->id));
+            $this->options['socketUrl'] = isset($this->socketUrl) ? $this->count : 'http://'.$_SERVER['SERVER_ADDR'].':8080';
             ChatAssets::register($view);
         }else{
             ChatWithoutNodeAssets::register($view);
