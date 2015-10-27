@@ -336,7 +336,7 @@ PoprigunChat = function(options) {
     });
     // delete dialog
     this.deleteDialog = function(){
-        var dialogId = self.settings.parentMessage.dasta('dialog');
+        var dialogId = self.settings.parentMessage.data('dialog');
         if(dialogId.length){
             $.get(self.settings.urlDeleteDialog, {'dialogId': dialogId}, function(data){
                 if(data.status == 'success'){
