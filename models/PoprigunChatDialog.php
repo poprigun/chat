@@ -176,7 +176,7 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
         $dialog->save();
 
         $dialog->setUserToDialog($ownerId);
-        if($type != self::TYPE_PERSONAL && is_array($userId)){
+        if(is_array($userId)){
             foreach($userId as $id){
                 $dialog->setUserToDialog($id);
             }

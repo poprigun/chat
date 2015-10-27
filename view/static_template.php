@@ -1,18 +1,19 @@
-<div id="poprigun-chat" data-rooms='<?=json_encode($rooms)?>'>
+<div id="poprigun-chat">
     <div class="col-sm-12">
         <div class="col-sm-4">
             <div class="panel panel-primary">
-                <div class="panel-heading">Dialogs</div>
+                <div class="panel-heading" style="height: 32px">Dialogs</div>
                 <div class="panel-body">
-                    <ul id="poprigun-chat-dialog-block" class="media-list"></ul>
+                    <ul id="poprigun-chat-dialog-block" style="height: 400px" class="media-list"></ul>
                 </div>
             </div>
         </div>
 
         <div class="col-sm-8">
             <div class="panel panel-primary">
-                <div class="panel-heading">Chat
-                <div id="poprigun-dialog-delete">X</div>
+                <div class="panel-heading" style="height: 32px">
+                        <div class="pull-left" >Chat</div>
+                        <div class="pull-right" style="cursor:pointer;" onclick="poprigunChat.deleteDialog()">X</div>
                 </div>
                 <div class="panel-body poprigun-chat-message-ajax">
                     <ul id="poprigun-chat-message-block" class="media-list"></ul>

@@ -18,7 +18,7 @@ use yii\widgets\ActiveForm;
 
 class ChatController extends Controller{
 
-    private $user;
+    public $user;
 
     public function init(){
         $this->user = Yii::$app->user->identity;
@@ -185,7 +185,7 @@ class ChatController extends Controller{
                 $result[$key]['new_count'] = $dialog->newCount;
                 $result[$key]['image'] = $dialog->userAvatar;
                 $lastMessages = $dialog->getMessages(1);
-                $result[$key]['last_message'] =  isset(current($lastMessages)->message) ? current($lastMessages)->message : '';
+                $result[$key]['last_message'] =  current(array_values($lastMessages)) ?  current(array_values($lastMessages))->message : '';
             }
         }
 
