@@ -288,7 +288,6 @@ PoprigunChat = function(options) {
             self.settings.callback.loadErrorCallback(xhr,textStatus);
         }
     }
-
     // return first message object
     this.firstMessage = function () {
         return self.settings.parentMessage.find(self.settings.childrenMessage + ':first-child');
@@ -297,7 +296,6 @@ PoprigunChat = function(options) {
     this.lastMessage = function () {
         return self.settings.parentMessage.find(self.settings.childrenMessage+ ':last-child');
     }
-
     //Listen dialog message
     this.listenServerMessage = function(dialogId){
         clearInterval(self.messageUpdate);
@@ -324,7 +322,6 @@ PoprigunChat = function(options) {
             self.loadDialogs();
         },self.settings.dialogTime);
     };
-
     // open dialog messages
     self.settings.parentDialog.on('click','> *',function(event){
         event.preventDefault();
@@ -339,14 +336,15 @@ PoprigunChat = function(options) {
     });
     // delete dialog
     this.deleteDialog = function(){
-        var dialogId = self.settings.parentMessage.data('dialog');
-        if()
-        $.get(self.settings.urlDeleteDialog, {'dialogId': dialogId}, function(data){
-            if(data.status == 'success'){
-                self.messageOldCount = 0;
-                self.settings.parentMessage.data('messages',0);
-                self.settings.parentDialog.find('[data-dialog='+dialogId+']').trigger('click');
-            }
-        })
+        var dialogId = self.settings.parentMessage.dasta('dialog');
+        if(dialogId.length){
+            $.get(self.settings.urlDeleteDialog, {'dialogId': dialogId}, function(data){
+                if(data.status == 'success'){
+                    self.messageOldCount = 0;
+                    self.settings.parentMessage.data('messages',0);
+                    self.settings.parentDialog.find('[data-dialog='+dialogId+']').trigger('click');
+                }
+            })
+        }
     };
 };

@@ -80,7 +80,7 @@ class PoprigunChatUserRel extends \yii\db\ActiveRecord implements StatusInterfac
      */
     public static function deleteMessage($messageId, $userId = null){
         $userId = $userId ? $userId : Yii::$app->user->id;
-        return self::updateAll(['status' => self::STATUS_DELETED,['message_id' => $messageId,'user_id' => $userId]]);
+        return self::updateAll(['status' => self::STATUS_DELETED],['message_id' => $messageId,'user_id' => $userId]);
     }
 
     /**
