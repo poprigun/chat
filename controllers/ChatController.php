@@ -144,7 +144,7 @@ class ChatController extends Controller{
     */
     public function actionDeleteMessage($messageId){
         return [
-            'status' => PoprigunChatUserRel::deleteMessage($messageId) ? 'success':'error'
+            'status' => PoprigunChatUserRel::deleteMessage(Chat::decodeUserId($messageId)) ? 'success':'error'
         ];
     }
 
