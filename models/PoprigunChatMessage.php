@@ -10,7 +10,7 @@ use Yii;
  *
  * @property integer $id
  * @property integer $dialog_id
- * @property integer $user_id
+ * @property integer $author_id
  * @property string $message
  * @property integer $messageType
  * @property integer $receiverId
@@ -43,13 +43,13 @@ class PoprigunChatMessage extends ActiveRecord implements StatusInterface
     public function rules()
     {
         return [
-            [['user_id', 'message'], 'required'],
+            [['author_id', 'message'], 'required'],
             ['dialog_id', 'required', 'on' => 'dialog'],
             ['receiverId', 'valdateReceiver'],
-            [['dialog_id', 'user_id', 'receiverId' , 'messageType'], 'integer'],
+            [['dialog_id', 'author_id', 'receiverId' , 'messageType'], 'integer'],
             [['updated_at', 'created_at'], 'safe'],
             [['message'], 'string', 'skipOnEmpty' => false],
-            [['user_id'], 'exist', 'skipOnError' => false, 'targetClass' => $this->pchatSettings['userModel'], 'targetAttribute' => ['user_id' => 'id']],
+            [['author_id'], 'exist', 'skipOnError' => false, 'targetClass' => $this->pchatSettings['userModel'], 'targetAttribute' => ['author_id' => 'id']],
             [['dialog_id'], 'exist', 'skipOnError' => false, 'targetClass' => PoprigunChatDialog::className(), 'targetAttribute' => ['dialog_id' => 'id']],
         ];
     }
@@ -62,7 +62,7 @@ class PoprigunChatMessage extends ActiveRecord implements StatusInterface
         return [
             'id' => 'ID',
             'dialog_id' => 'Dialog ID',
-            'user_id' => 'User ID',
+            'author_id' => 'Author ID',
             'message' => 'Message',
             'updated_at' => 'Updated At',
             'created_at' => 'Created At',
@@ -97,7 +97,7 @@ class PoprigunChatMessage extends ActiveRecord implements StatusInterface
      * @return \yii\db\ActiveQuery
      */
     public function getUser(){
-        return $this->hasOne($this->pchatSettings['userModel'], ['id' => 'user_id']);
+        return $this->hasOne($this->pchatSettings['userModel'], ['id' => 'author_id']);
     }
 
     /**
@@ -169,11 +169,11 @@ class PoprigunChatMessage extends ActiveRecord implements StatusInterface
             switch($this->messageType){
 
                 case self::MESSAGE_TO_USER:
-                    $dialog = PoprigunChatDialog::getMessageDialog($this->user_id, $this->receiverId,$title);
+                    $dialog = PoprigunChatDialog::getMessageDialog($this->author_id, $this->receiverId,$title);
                     break;
 
                 case self::MESSAGE_TO_DIALOG:
-                    $dialog = PoprigunChatDialog::getDialog($this->user_id, $this->receiverId);
+                    $dialog = PoprigunChatDialog::getDialog($this->author_id, $this->receiverId);
                     if(null === $dialog){
                         throw new \BadMethodCallException;
                     }
@@ -182,7 +182,7 @@ class PoprigunChatMessage extends ActiveRecord implements StatusInterface
                 default:
                     throw new \BadMethodCallException;
             }
-            $result = $dialog->addMessageToDialog($this->user_id, $this->message);
+            $result = $dialog->addMessageToDialog($this->author_id, $this->message);
         }catch (\Exception $e){
             $result = $e->getMessage();
         }

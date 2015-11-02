@@ -12,7 +12,7 @@ use yii\helpers\ArrayHelper;
  * This is the model class for table "poprigun_chat_dialog".
  *
  * @property integer $id
- * @property integer $user_id
+ * @property integer $author_id
  * @property string $title
  * @property integer $type
  * @property integer $status
@@ -40,11 +40,11 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
     public function rules(){
 
         return [
-            [['user_id'], 'required'],
-            [['user_id', 'status','type'], 'integer'],
+            [['author_id'], 'required'],
+            [['author_id', 'status','type'], 'integer'],
             [['created_at', 'updated_at'], 'safe'],
             [['title'], 'string', 'max' => 128],
-            [['user_id'], 'exist', 'skipOnError' => false, 'targetClass' => $this->pchatSettings['userModel'], 'targetAttribute' => ['user_id' => 'id']],
+            [['author_id'], 'exist', 'skipOnError' => false, 'targetClass' => $this->pchatSettings['userModel'], 'targetAttribute' => ['author_id' => 'id']],
         ];
     }
 
@@ -55,7 +55,7 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
 
         return [
             'id' => 'ID',
-            'user_id' => 'User ID',
+            'author_id' => 'Author ID',
             'title' => 'Title',
             'type' => 'Type',
             'status' => 'Status',
@@ -77,7 +77,7 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
      */
     public function getUser(){
 
-        return $this->hasOne($this->pchatSettings['userModel'], ['id' => 'user_id']);
+        return $this->hasOne($this->pchatSettings['userModel'], ['id' => 'author_id']);
     }
 
     /**
@@ -124,7 +124,7 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
         if($senderId == $receiverId)
             throw new \BadFunctionCallException('The same sender and receiver id');
 
-        $dialog = self::isUserDialogExist($senderId,$receiverId,$title,$type);
+        $dialog = self::isUserDialogExist($senderId,$receiverId,$type);
 
         if(!$dialog){
             $dialog = self::createDialog($senderId,$receiverId,$title,$type);
@@ -170,7 +170,7 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
     public static function createDialog($ownerId, $userId, $title = null, $type = self::TYPE_PERSONAL){
 
         $dialog = new PoprigunChatDialog();
-        $dialog->user_id = $ownerId;
+        $dialog->author_id = $ownerId;
         $dialog->title = $title;
         $dialog->type = $type;
         $dialog->save();
@@ -257,11 +257,13 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
     public function getMessages($limit = null, $messageId = null, $oldMessage = false, $view = [PoprigunChatUserRel::NEW_MESSAGE, PoprigunChatUserRel::OLD_MESSAGE]){
         $query = PoprigunChatMessage::find()
             ->innerJoinWith('chatUserRel')
-            //->innerJoinWith('chatUserRel.chatUser')
+            ->innerJoinWith('chatUserRel.chatUser')
+            //->innerJoin(PoprigunChatUser::tableName(),[PoprigunChatUser::tableName().'.id' => PoprigunChatUserRel::tableName().'.chat_user_id'])
             ->where([PoprigunChatMessage::tableName().'.dialog_id' => $this->id])
             ->andWhere([PoprigunChatUserRel::tableName().'.is_view' => $view])
             ->andWhere([PoprigunChatUserRel::tableName().'.status' => StatusInterface::STATUS_ACTIVE])
-            ->andWhere([PoprigunChatUserRel::tableName().'.user_id'=>Yii::$app->user->id])
+            //->andWhere([PoprigunChatUserRel::tableName().'.chat_user_id' => Yii::$app->user->id])
+            ->andWhere([PoprigunChatUser::tableName().'.user_id' => Yii::$app->user->id])
             ->orderBy([PoprigunChatMessage::tableName().'.id' => SORT_DESC]);
         if(null != $limit){
             $query->limit($limit);
@@ -300,18 +302,18 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
         $poprigunChat = new PoprigunChatMessage([
             'dialog_id' => $this->id,
             'message' => $message,
-            'user_id' => $senderId,
+            'author_id' => $senderId,
         ]);
 
         if($poprigunChat->save()){
             foreach($this->poprigunChatUsers as $user){
                 $rel = new PoprigunChatUserRel([
                     'message_id' => $poprigunChat->id,
-                    'user_id' => $user->user_id,
+                    'chat_user_id' => $user->id,
                     'is_view' => PoprigunChatUserRel::NEW_MESSAGE,
                     'status' => PoprigunChatUserRel::STATUS_ACTIVE,
                 ]);
-                if($senderId == $user->id){
+                if($senderId == $user->user_id){
                     $rel->is_view = PoprigunChatUserRel::OLD_MESSAGE;
                 }
 
@@ -352,13 +354,15 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
         $userId = $userId ? $userId : Yii::$app->user->id;
 
         $messageIds = PoprigunChatMessage::find()
-            ->select('id')
+            ->select(PoprigunChatMessage::tableName().'.id')
+            ->innerJoinWith('chatUserRel')
+            ->innerJoinWith('chatUserRel.chatUser')
             ->andWhere([PoprigunChatMessage::tableName().'.dialog_id' => $dialogId])
+            ->andWhere([PoprigunChatUser::tableName().'.user_id' => $userId])
             ->asArray()
             ->all();
 
         return PoprigunChatUserRel::updateAll(['status' => PoprigunChatUserRel::STATUS_DELETED],[
-            'user_id' => $userId,
             'message_id' => ArrayHelper::map($messageIds,'id','id'),
         ]);
     }

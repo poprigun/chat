@@ -2,7 +2,6 @@
 
 namespace poprigun\chat\controllers;
 
-use frontend\widgets\conversation\models\PoprigunConversationUserRel;
 use poprigun\chat\filters\AjaxFilter;
 use poprigun\chat\models\PoprigunChatMessage;
 use poprigun\chat\models\PoprigunChatDialog;
@@ -84,7 +83,9 @@ class ChatController extends Controller{
             $messages = $dialog->getMessages(empty($messageId) ? $limit : null, $messageId);
         }
 
-        PoprigunChatUserRel::setReadMessage($this->user->id, PoprigunChatUserRel::getUnreadMessage($this->user->id,$messages));
+        $chatUser = $dialog->getPoprigunChatUsers()->andWhere(['user_id' => $this->user->id ])->one();
+
+        PoprigunChatUserRel::setReadMessage($chatUser->id, PoprigunChatUserRel::getUnreadMessage($chatUser->id,$messages));
         $json = $this->getMessageArray($messages);
         if(!empty($json)){
             krsort($json);
@@ -109,7 +110,7 @@ class ChatController extends Controller{
         $model = new PoprigunChatMessage();
         if($model->load(Yii::$app->request->post())){
 
-            $model->user_id = $this->user->id;
+            $model->author_id = $this->user->id;
             $validate = ActiveForm::validate($model);
             if(empty($validate)){
                 $newMessage = $model->sendMessage();
@@ -157,7 +158,7 @@ class ChatController extends Controller{
              * @var $message PoprigunChatMessage
              */
 
-            $tempArray['user_id'] = $message->user_id;
+            $tempArray['user_id'] = $message->author_id;
             $tempArray['user_name'] = $message->userName;
             $tempArray['date'] = strtotime($message->created_at);
             $tempArray['message'] = $message->message;
@@ -180,7 +181,7 @@ class ChatController extends Controller{
                  * @var $dialog PoprigunChatDialog
                  */
                 $result[$key]['dialog_id'] = Chat::codeDialogId($dialog->id);
-                $result[$key]['user_id'] = $dialog->user_id;
+                $result[$key]['user_id'] = $dialog->author_id;
                 $result[$key]['user_name'] = $dialog->userName;
                 $result[$key]['new_count'] = $dialog->newCount;
                 $result[$key]['image'] = $dialog->userAvatar;
