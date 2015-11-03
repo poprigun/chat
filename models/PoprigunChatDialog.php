@@ -138,8 +138,8 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
      *
      * @param integer $senderId (id sender user)
      * @param integer $receiverId (id receiver user)
-     * @param null|string $title
-     * @return PoprigunChatDialogo
+     * @param integer $type
+     * @return PoprigunChatDialog
      */
     public static function isUserDialogExist($senderId, $receiverId, $type = self::TYPE_PERSONAL){
 
@@ -147,11 +147,18 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
             throw new \BadFunctionCallException('The same sender and receiver id');
 
         $dialog = self::find()
-            ->innerJoinWith('poprigunChatUsers')
-            ->andWhere([
-                PoprigunChatUser::tableName().'.user_id' => $senderId,
-                PoprigunChatUser::tableName().'.user_id' => $receiverId,
+            ->innerJoinWith([
+                'poprigunChatUsers' => function ($q) {
+                    $q->from('poprigun_chat_user pcu1');
+                },
             ])
+            ->innerJoinWith([
+                'poprigunChatUsers' => function ($q) {
+                    $q->from('poprigun_chat_user pcu2');
+                },
+            ])
+            ->andWhere(['pcu1.user_id' => $senderId])
+            ->andWhere(['pcu2.user_id' => $receiverId])
             ->andWhere([PoprigunChatDialog::tableName().'.type' => $type])
             ->one();
 
