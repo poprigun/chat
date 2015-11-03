@@ -112,6 +112,8 @@ PoprigunChat = function(options) {
     // add item
     function addItem(data, source, parent, old){
         var template = Handlebars.compile( source.html() );
+
+        self.settings.scrollBox.scrollTop(self.settings.scrollBox.height() - 10 )
         if(old == undefined){
             if(self.settings.addNewMessage == 'append'){
                 parent.append( template(data) );
