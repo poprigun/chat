@@ -10,6 +10,7 @@ use Yii;
 use yii\base\Widget;
 use yii\helpers\ArrayHelper;
 use yii\helpers\Html;
+use yii\helpers\Json;
 use yii\helpers\Url;
 use yii\web\View;
 
@@ -57,7 +58,7 @@ class Chat extends Widget{
         }
 
         $script = '
-             poprigunChat = new PoprigunChat('.json_encode($this->options).');
+             poprigunChat = new PoprigunChat('.Json::encode($this->options).');
         ';
 
         $view->registerJs($script,View::POS_END);
