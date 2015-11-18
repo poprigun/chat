@@ -82,6 +82,7 @@ class PoprigunChatUserRel extends \yii\db\ActiveRecord implements StatusInterfac
         $userId = $userId ? $userId : Yii::$app->user->id;
 
         $message = PoprigunChatMessage::find()
+            ->select([PoprigunChatMessage::tableName().'.id', PoprigunChatUser::tableName().'.id as chat_user_id'])
             ->innerJoinWith('dialog')
             ->innerJoinWith('dialog.poprigunChatUsers')
             ->andWhere([PoprigunChatMessage::tableName().'.id' => $messageId])
@@ -94,7 +95,7 @@ class PoprigunChatUserRel extends \yii\db\ActiveRecord implements StatusInterfac
 
         return self::updateAll(['status' => self::STATUS_DELETED],[
             'message_id' => $message['id'],
-            'chat_user_id' => $userId,
+            'chat_user_id' => $userId['chat_user_id'],
         ]);
     }
 
