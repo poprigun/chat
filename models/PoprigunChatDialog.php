@@ -369,8 +369,13 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
             ->asArray()
             ->all();
 
+        if(empty($messageIds)){
+            return false;
+        }
+
         return PoprigunChatUserRel::updateAll(['status' => PoprigunChatUserRel::STATUS_DELETED],[
             'message_id' => ArrayHelper::map($messageIds,'id','id'),
+            'chat_user_id' => $userId,
         ]);
     }
 
