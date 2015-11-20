@@ -13,7 +13,7 @@ class ChatAssets extends AssetBundle{
     ];
     public $js = [
         '//cdn.socket.io/socket.io-1.3.5.js',
-        'handlebars.min-v4.0.3.js',
+        'mustache.min.js',
         'develop.js',
     ];
     /**

@@ -25,8 +25,7 @@ class PoprigunChatUserRel extends \yii\db\ActiveRecord implements StatusInterfac
     /**
      * @inheritdoc
      */
-    public static function tableName()
-    {
+    public static function tableName(){
         return 'poprigun_chat_user_rel';
     }
 
@@ -58,78 +57,47 @@ class PoprigunChatUserRel extends \yii\db\ActiveRecord implements StatusInterfac
     }
 
     /**
+     * Get message user
+     *
      * @return \yii\db\ActiveQuery
      */
-    public function getChatUser(){
+    public function getDialogUser(){
+
         return $this->hasOne(PoprigunChatUser::className(), ['id' => 'chat_user_id']);
     }
 
     /**
+     * Get message
+     *
      * @return \yii\db\ActiveQuery
      */
-    public function getChat(){
+    public function getMessage(){
+
         return $this->hasOne(PoprigunChatMessage::className(), ['id' => 'message_id']);
     }
 
     /**
-     * Delete message (change status)
+     * Set status
      *
-     * @param integer $messageId
-     * @param null $userId
-     * @return int
+     * @param int $status
+     * @return bool|int
+     * @throws \Exception
      */
-    public static function deleteMessage($messageId, $userId = null){
-        $userId = $userId ? $userId : Yii::$app->user->id;
-
-        $message = PoprigunChatMessage::find()
-            ->select([PoprigunChatMessage::tableName().'.id', PoprigunChatUser::tableName().'.id as chat_user_id'])
-            ->innerJoinWith('dialog')
-            ->innerJoinWith('dialog.poprigunChatUsers')
-            ->andWhere([PoprigunChatMessage::tableName().'.id' => $messageId])
-            ->andWhere([PoprigunChatUser::tableName().'.user_id' => $userId])
-            ->asArray()
-            ->one();
-        if(empty($message)){
-            return false;
-        }
-
-        return self::updateAll(['status' => self::STATUS_DELETED],[
-            'message_id' => $message['id'],
-            'chat_user_id' => $userId['chat_user_id'],
-        ]);
+    public function setStatus($status = self::STATUS_ACTIVE){
+        $this->status = $status;
+        return $this->update();
     }
 
     /**
-     * Set messages status viewed
+     * Set view
      *
-     * @param int $chatUserId
-     * @param int|array $messageId
-     * @return int
+     * @param int $view
+     * @return bool|int
+     * @throws \Exception
      */
-    public static function setReadMessage($chatUserId, $messageId){
-
-        return self::updateAll(['is_view' => self::OLD_MESSAGE],['message_id' => $messageId, 'chat_user_id' => $chatUserId]);
+    public function setView($view = self::OLD_MESSAGE){
+        $this->is_view = $view;
+        return $this->update();
     }
 
-    /**
-     * Get unread message
-     *
-     * @param int $chatUserId
-     * @param array $messages
-     * @return array
-     */
-    public static function getUnreadMessage($chatUserId, $messages){
-        $result = [];
-
-        if(!empty($messages)){
-            foreach($messages as $key => $message){
-                foreach($message->chatUserRel as $messageRel){
-                    if($messageRel->is_view == self::NEW_MESSAGE && $chatUserId == $messageRel->chat_user_id){
-                        $result[$key] = $message->id;
-                    }
-                }
-            }
-        }
-        return $result;
-    }
 }

@@ -37,7 +37,7 @@ PoprigunChat = function(options) {
 
     this.settings.urlSocket = 'http://127.0.0.1:8080';
     this.settings.urlGetDialogs = '/poprigun_chat/chat/get-dialogs';
-    this.settings.urlGetDialogMessages = '/poprigun_chat/chat/get-dialog-messages';
+    this.settings.urlGetDialogMessages = '/poprigun_chat/chat/get-messages';
     this.settings.urlDeleteDialog = '/poprigun_chat/chat/delete-dialog';
     this.settings.urlDeleteMessage = '/poprigun_chat/chat/delete-message';
     this.settings.urlSendMessage = '/poprigun_chat/chat/send-message';

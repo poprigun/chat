@@ -13,9 +13,10 @@ class m150818_115142_poprigun_chat_user_table extends Migration
         }
 
         $this->createTable('{{%poprigun_chat_user}}', [
-            'id'                       => 'INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY',
-            'dialog_id'                => 'INT(11) NOT NULL',
+            'id'                       => 'INT(11) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY',
+            'dialog_id'                => 'INT(11) UNSIGNED NOT NULL',
             'user_id'                  => 'INT(11) UNSIGNED NOT NULL',
+            'status'                   => 'TINYINT(1) NOT NULL DEFAULT '.\poprigun\chat\models\PoprigunChatUser::STATUS_ACTIVE,
             'updated_at'               => 'DATETIME DEFAULT NULL',
             'created_at'               => 'DATETIME DEFAULT NULL',
         ], $tableOptions);
@@ -24,14 +25,12 @@ class m150818_115142_poprigun_chat_user_table extends Migration
         $this->createIndex('idx-poprigun_chat_user-user_id','{{%poprigun_chat_user}}','user_id');
 
         $this->addForeignKey('fk-poprigun_chat_user-dialog_id', '{{%poprigun_chat_user}}', 'dialog_id', '{{%poprigun_chat_dialog}}', 'id','CASCADE','CASCADE');
-        $this->addForeignKey('fk-poprigun_chat_user-user_id', '{{%poprigun_chat_user}}', 'user_id', '{{%user}}', 'id','CASCADE','CASCADE');
 
     }
 
     public function down()
     {
         $this->dropForeignKey('fk-poprigun_chat_user-dialog_id', '{{%poprigun_chat_user}}');
-        $this->dropForeignKey('fk-poprigun_chat_user-user_id', '{{%poprigun_chat_user}}');
         $this->dropTable('{{%poprigun_chat_user}}');
     }
 }

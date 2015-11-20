@@ -3,6 +3,7 @@
 $this->registerJs("
     $(document).on('afterValidate submit', '#poprigun-chat-form', function (event, messages) {
         if(event.type == 'afterValidate') {
+        console.log(messages)
             if (messages != false) {
                 $('#poprigun-chat-message-popup').modal('hide');
             }
@@ -20,7 +21,7 @@ $this->registerJs("
 ");
 ?>
 
-<button type="button" class="poprigun-message-button"  data-toggle="modal" data-target="#poprigun-chat-message-popup"><?=$options['text']?></button>
+<button type="button" class="poprigun-message-button"  data-toggle="modal" data-target="#poprigun-chat-message-popup"><?=$settings['text']?></button>
 
 <?php \yii\bootstrap\Modal::begin([
     'id'    =>  'poprigun-chat-message-popup',
@@ -39,12 +40,12 @@ $this->registerJs("
         ->textarea(['pleholder' => 'Write message ...']);
     ?>
 
-    <?= $form->field($model,'receiverId',[
+    <?= $form->field($model,'receiver_id',[
         'options' => [
             'class' =>  ''
         ],
     ])->hiddenInput()->label(false)?>
-    <?= $form->field($model,'messageType',[
+    <?= $form->field($model,'message_type',[
         'options' => [
             'class' =>  ''
         ],

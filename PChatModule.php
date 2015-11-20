@@ -6,4 +6,4 @@ use yii\base\Module;
 
 class PChatModule extends Module{
 
-} 
+}

@@ -13,8 +13,8 @@ class m150818_115150_poprigun_chat_attachment_table extends Migration
         }
 
         $this->createTable('{{%poprigun_chat_attachment}}', [
-            'id'                       => 'INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY',
-            'message_id'               => 'INT(11) NOT NULL',
+            'id'                       => 'INT(11) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY',
+            'message_id'               => 'INT(11) UNSIGNED NOT NULL',
             'attachment'               => 'TEXT NULL DEFAULT NULL',
             'updated_at'               => 'DATETIME DEFAULT NULL',
             'created_at'               => 'DATETIME DEFAULT NULL',

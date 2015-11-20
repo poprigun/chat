@@ -5,6 +5,8 @@ namespace poprigun\chat\models;
 use poprigun\chat\interfaces\StatusInterface;
 use poprigun\chat\widgets\Chat;
 use Yii;
+use yii\helpers\ArrayHelper;
+
 /**
  * This is the model class for table "poprigun_chat_message".
  *
@@ -12,44 +14,39 @@ use Yii;
  * @property integer $dialog_id
  * @property integer $author_id
  * @property string $message
- * @property integer $messageType
  * @property integer $receiverId
  * @property string $updated_at
  * @property string $created_at
  *
  * @property User $user
  * @property PoprigunChatDialog $dialog
- * @property PoprigunChatAttachment[] $poprigunChatAttachments
  */
-class PoprigunChatMessage extends ActiveRecord implements StatusInterface
-{
+class PoprigunChatMessage extends ActiveRecord implements StatusInterface{
 
     CONST MESSAGE_TO_USER = 1;
     CONST MESSAGE_TO_DIALOG = 3;
 
-    public $messageType;
     public $receiverId;
+
     /**
      * @inheritdoc
      */
-    public static function tableName()
-    {
+    public static function tableName(){
+
         return 'poprigun_chat_message';
     }
 
     /**
      * @inheritdoc
      */
-    public function rules()
-    {
+    public function rules(){
+
         return [
             [['author_id', 'message'], 'required'],
             ['dialog_id', 'required', 'on' => 'dialog'],
-            ['receiverId', 'valdateReceiver'],
-            [['dialog_id', 'author_id', 'receiverId' , 'messageType'], 'integer'],
+            [['dialog_id', 'author_id', 'receiverId' ], 'integer'],
             [['updated_at', 'created_at'], 'safe'],
             [['message'], 'string', 'skipOnEmpty' => false],
-            [['author_id'], 'exist', 'skipOnError' => false, 'targetClass' => $this->pchatSettings['userModel'], 'targetAttribute' => ['author_id' => 'id']],
             [['dialog_id'], 'exist', 'skipOnError' => false, 'targetClass' => PoprigunChatDialog::className(), 'targetAttribute' => ['dialog_id' => 'id']],
         ];
     }
@@ -57,8 +54,8 @@ class PoprigunChatMessage extends ActiveRecord implements StatusInterface
     /**
      * @inheritdoc
      */
-    public function attributeLabels()
-    {
+    public function attributeLabels(){
+
         return [
             'id' => 'ID',
             'dialog_id' => 'Dialog ID',
@@ -70,123 +67,106 @@ class PoprigunChatMessage extends ActiveRecord implements StatusInterface
     }
 
     /**
-     * Validate receiver
+     * Get message user rel
      *
-     * @param $attribute
-     * @param $params
-     */
-    public function valdateReceiver($attribute, $params){
-
-        if($this->messageType == self::MESSAGE_TO_USER){
-            $this->receiverId = Chat::decodeUserId($this->receiverId);
-        }elseif($this->messageType == self::MESSAGE_TO_DIALOG){
-            $this->receiverId = Chat::decodeDialogId($this->receiverId);
-        }else{
-            $this->addError($attribute,'Incorrect receiver');
-        }
-    }
-
-    /**
      * @return \yii\db\ActiveQuery
      */
+    public function getMessageUserRel(){
 
-    public function getChatUserRel(){
         return $this->hasMany(PoprigunChatUserRel::className(), ['message_id'=>'id']);
     }
-    /**
-     * @return \yii\db\ActiveQuery
-     */
-    public function getUser(){
-        return $this->hasOne($this->pchatSettings['userModel'], ['id' => 'author_id']);
-    }
 
     /**
+     * Get dialog
+     *
      * @return \yii\db\ActiveQuery
      */
     public function getDialog(){
+
         return $this->hasOne(PoprigunChatDialog::className(), ['id' => 'dialog_id']);
     }
 
     /**
+     * Get attachments
+     *
      * @return \yii\db\ActiveQuery
      */
-    public function getPoprigunChatAttachments(){
+    public function getMessageAttachments(){
+
         return $this->hasMany(PoprigunChatAttachment::className(), ['message_id' => 'id']);
     }
 
     /**
-     * Get user name
-     * @return string
+     * Set message status
+     *
+     * @param int $status
+     * @param null $userId
+     * @return bool|int
      */
-    public function getUserName(){
+    public function setMessageStatus($status = PoprigunChatMessage::STATUS_ACTIVE, $userId = null){
+        $userId = $userId ? $userId : Yii::$app->user->id;
 
-        if(!empty($this->pchatSettings['userNameMethod'])){
+        $query = $this->getDialog()->getDialogUsers()
+            ->select([PoprigunChatMessage::tableName().'.id', PoprigunChatUser::tableName().'.id as chat_user_id'])
+            ->andWhere([PoprigunChatMessage::tableName().'.id' => $messageId])
+            ->andWhere([PoprigunChatUser::tableName().'.user_id' => $userId])
+            ->asArray()
+            ->one();
 
-            $nameMethod = $this->pchatSettings['userNameMethod'];
-            if($this->pchatSettings['userModel'] == $nameMethod['class']){
-                $userName = $this->user->$nameMethod['method'];
-            }else{
-                $userName = $this->user->$nameMethod['relation']->$nameMethod['method'];
-            }
-        }else{
-            $userName = Chat::$defaultUserName;
+        if(empty($message)){
+            return false;
         }
 
-        return $userName;
+        return self::updateAll(['status' => self::STATUS_DELETED],['message_id' => $message['id']]);
     }
 
     /**
-     * Get user avatar
-     * @return string
+     * Set message status
+     *
+     * @param int $messageId
+     * @param int $status
+     * @param null $userId
+     * @return bool|int
      */
-    public function getUserAvatar(){
+    public function setStaticMessageStatus($messageId, $status = PoprigunChatMessage::STATUS_ACTIVE, $userId = null){
+        $userId = $userId ? $userId : Yii::$app->user->id;
 
-        $userAvatar = '';
-        if(!empty($this->pchatSettings['userAvatarMethod'])){
-
-            $avatarMethod = $this->pchatSettings['userAvatarMethod'];
-            if($this->pchatSettings['userModel'] == $avatarMethod['class']){
-                $tempAvatar = $this->user->$avatarMethod['method'];
-            }else{
-                $tempAvatar = $this->user->$avatarMethod['relation']->$avatarMethod['method'];
-            }
-
-            if(!empty($tempAvatar)){
-                $userAvatar = $tempAvatar;
-            }
+        $message = self::findOne(['id' => $messageId]);
+        if(null === $message){
+            return false;
         }
 
-        return $userAvatar;
+        return $message->setMessageStatus($status,$userId);
     }
 
     /**
-     * Send message
-     * @param string|null $title
-     * @return bool
+     * Set message(s) view status
+     *
+     * @param int $messageId
+     * @param int $view
+     * @param null $userId
+     * @return bool|int
      */
-    public function sendMessage($title = null){
-        try{
-            switch($this->messageType){
+    public static function setStaticMessageView($messageId, $view = PoprigunChatUserRel::OLD_MESSAGE, $userId = null){
 
-                case self::MESSAGE_TO_USER:
-                    $dialog = PoprigunChatDialog::getMessageDialog($this->author_id, $this->receiverId,$title);
-                    break;
+        $userId = $userId ? $userId : Yii::$app->user->id;
 
-                case self::MESSAGE_TO_DIALOG:
-                    $dialog = PoprigunChatDialog::getDialog($this->author_id, $this->receiverId);
-                    if(null === $dialog){
-                        throw new \BadMethodCallException;
-                    }
-                    break;
+        $messageIds = self::find()
+            ->select([self::tableName().'.id', PoprigunChatUser::tableName().'.id as chat_user_id'])
+            ->innerJoinWith('messageUserRel')
+            ->innerJoinWith('messageUserRel.dialogUser')
+            ->andWhere([self::tableName().'.id' => $messageId])
+            ->andWhere([PoprigunChatUser::tableName().'.user_id' => $userId])
+            ->asArray()
+            ->all();
 
-                default:
-                    throw new \BadMethodCallException;
-            }
-            $result = $dialog->addMessageToDialog($this->author_id, $this->message);
-        }catch (\Exception $e){
-            $result = $e->getMessage();
+        if(empty($messageIds)){
+            return false;
         }
 
-        return $result;
+        return PoprigunChatUserRel::updateAll(['is_view' => $view],[
+            'message_id' => ArrayHelper::map($messageIds,'id','id'),
+            'chat_user_id' => ArrayHelper::map($messageIds,'chat_user_id','chat_user_id'),
+        ]);
     }
 }

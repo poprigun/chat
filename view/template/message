@@ -1,0 +1,17 @@
+{{#data}}
+    <li class="media poprigun-chat-message-child" data-message="{{message_id}}">
+        <div class="media-message">
+            <div class="media">
+                <a class="pull-left" href="{{link}}">
+                    <img class="media-object chat-image" src="{{user_avatar}}">
+                </a>
+                <div class="media-body">
+                    <div class="message-text">{{message}}</div>
+                    <br>
+                    <small class="text-muted">{{user_name}}</small>
+                    <hr>
+                </div>
+            </div>
+        </div>
+    </li>
+{{/data}}

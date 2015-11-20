@@ -2,6 +2,7 @@
 
 namespace poprigun\chat\widgets;
 
+use poprigun\chat\models\forms\MessageForm;
 use poprigun\chat\models\PoprigunChatMessage;
 use Yii;
 use yii\base\Widget;
@@ -9,7 +10,7 @@ use yii\base\Widget;
 class ChatButton extends Widget{
 
     public $template = '@vendor/poprigun/chat/view/button_template.php';
-    public $options = [];
+    public $settings = [];
 
     public function init(){
 
@@ -20,18 +21,18 @@ class ChatButton extends Widget{
 
     public function initOptions(){
 
-        $this->options['text'] = empty($this->options['text']) ? 'Message' : $this->options['text'];
+        $this->settings['text'] = empty($this->settings['text']) ? 'Message' : $this->settings['text'];
     }
 
     public function registerAssets(){
 
-        $model =  new PoprigunChatMessage();
-        $model->receiverId = Chat::decodeUserId($this->options['receiver_id']);
-        $model->messageType = PoprigunChatMessage::MESSAGE_TO_USER;
+        $model =  new MessageForm(['scenario' => 'to_user']);
+        $model->receiver_id = $this->settings['receiver_id'];
+        $model->message_type = PoprigunChatMessage::MESSAGE_TO_USER;
 
         echo $this->renderFile($this->template,[
             'model' => $model,
-            'options' => $this->options,
+            'settings' => $this->settings,
         ]);
     }
 

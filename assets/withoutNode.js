@@ -4,6 +4,7 @@ PoprigunChat = function(options) {
     var self = this;
     var messageUpdate = null;
     var dialogUpdate = null;
+    var currentDialog;
 
     this.settings = {};
 
@@ -43,7 +44,7 @@ PoprigunChat = function(options) {
     this.settings.childrenMessage = '.poprigun-chat-message-child';
 
     this.settings.urlGetDialogs = '/poprigun_chat/chat/get-dialogs';
-    this.settings.urlGetDialogMessages = '/poprigun_chat/chat/get-dialog-messages';
+    this.settings.urlGetDialogMessages = '/poprigun_chat/chat/get-messages';
     this.settings.urlDeleteDialog = '/poprigun_chat/chat/delete-dialog';
     this.settings.urlSendMessage = '/poprigun_chat/chat/send-message';
 
@@ -70,7 +71,6 @@ PoprigunChat = function(options) {
     function sendByEnter(send){
         if(send){
             self.settings.entryField.on('keypress',function(e){
-                var dialogId =  self.settings.parentMessage.data('dialog');
                 if(e.keyCode == 13){
                     self.settings.form.submit();
                 }
@@ -85,10 +85,9 @@ PoprigunChat = function(options) {
 
         if (height + scroll == height) {
             var message = self.firstMessage();
-            var dialogId = self.settings.parentMessage.data('dialog');
 
             self.loadOldMessage({
-                dialogId: dialogId,
+                dialogId: currentDialog,
                 messageId : message.data('message'),
                 old : true
             });
@@ -137,6 +136,7 @@ PoprigunChat = function(options) {
             dataType: self.settings.datatype,
             data: self.settings.form.serialize(),
             beforeSend: function (xhr,settings) {
+                self.settings.form.find('.dialog-id-field').val(currentDialog)
                 return self.sendBeforeSendCallback(xhr,settings);
             },
             complete: function (xhr,textStatus) {
@@ -318,7 +318,7 @@ PoprigunChat = function(options) {
     this.listenServerDialog = function(){
         clearInterval(self.dialogUpdate);
         if(self.settings.dialogTime == 'undefined' || self.settings.dialogTime == 0){
-            return false;
+            return false;'mustache.min.js',
         }
         self.dialogUpdate = setInterval(function(){
             self.loadDialogs();
@@ -329,22 +329,22 @@ PoprigunChat = function(options) {
         event.preventDefault();
 
         var dialogId = $(this).data('dialog');
-        self.settings.parentMessage.data('dialog',dialogId);
+        currentDialog = dialogId;
+        self.settings.parentMessage.data('dialog',currentDialog);
         self.loadMessage({
-            dialogId : dialogId,
+            dialogId : currentDialog,
         },true)
-        self.settings.receiverField.val(dialogId);
-        self.listenServerMessage(dialogId);
+        self.settings.receiverField.val(currentDialog);
+        self.listenServerMessage(currentDialog);
     });
     // delete dialog
     this.deleteDialog = function(){
-        var dialogId = self.settings.parentMessage.data('dialog');
-        if(dialogId.length){
-            $.get(self.settings.urlDeleteDialog, {'dialogId': dialogId}, function(data){
+        if(currentDialog.length){
+            $.get(self.settings.urlDeleteDialog, {'dialogId': currentDialog}, function(data){
                 if(data.status == 'success'){
                     self.messageOldCount = 0;
                     self.settings.parentMessage.data('messages',0);
-                    self.settings.parentDialog.find('[data-dialog='+dialogId+']').trigger('click');
+                    self.settings.parentDialog.find('[data-dialog='+currentDialog+']').trigger('click');
                 }
             })
         }

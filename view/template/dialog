@@ -1,0 +1,15 @@
+{{#data}}
+    <li class="media poprigun-chat-dialog-child poprigun-chat-dialog-id" data-dialog="{{dialog_id}}">
+        <div class="media-message">
+            <div class="media">
+                <a class="pull-left" href="#">
+                    <img class="media-object img-circle" style="height:40px;" src="{{image}}">
+                </a>
+                <div class="media-body">
+                    <h5>{{user_name}}</h5>
+                    <small class="text-muted">{{last_message}}</small>
+                </div>
+            </div>
+        </div>
+    </li>
+{{/data}}

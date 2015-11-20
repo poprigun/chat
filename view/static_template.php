@@ -25,7 +25,7 @@
                             'id' => 'poprigun-chat-send-form',
                         ]);
                         $form->successCssClass = '';
-                        $form->enableClientValidation = false;
+                        $form->enableClientValidation = true;
                         ?>
 
                         <?= $form->field($model,'message')
@@ -35,7 +35,7 @@
                             ]);
                         ?>
 
-                        <?= $form->field($model,'receiverId',[
+                        <?= $form->field($model,'receiver_id',[
                             'options' => [
                                 'class' =>  ''
                             ],
@@ -43,13 +43,19 @@
                             'class' =>  'poprigun-chat-receiver-id',
                         ])->label(false)?>
 
-                        <?= $form->field($model,'messageType',[
+                        <?= $form->field($model,'message_type',[
                             'options' => [
                                 'class' =>  ''
                             ],
                         ])->hiddenInput([
                             'value' => \poprigun\chat\models\PoprigunChatMessage::MESSAGE_TO_DIALOG,
                         ])->label(false)?>
+
+                        <?= $form->field($model,'dialog_id',[
+                            'options' => [
+                                'class' =>  'dialog_id'
+                            ],
+                        ])->hiddenInput()->label(false)?>
 
                         <span class="input-group-btn">
                             <button class="btn btn-info" type="submit">SEND</button>
@@ -60,42 +66,4 @@
             </div>
         </div>
     </div>
-</div>
-
-<div id="poprigun-chat-dialog" class="hide" type="text/x-handlebars-template">
-{{#each this}}
-    <li class="media poprigun-chat-dialog-child poprigun-chat-dialog-id" data-dialog="{{dialog_id}}">
-        <div class="media-message">
-            <div class="media">
-                <a class="pull-left" href="#">
-                    <img class="media-object img-circle" style="height:40px;" src="{{image}}">
-                </a>
-                <div class="media-body">
-                    <h5>{{user_name}}</h5>
-                    <small class="text-muted">{{last_message}}</small>
-                </div>
-            </div>
-        </div>
-    </li>
-{{/each}}
-</div>
-
-<div id="poprigun-chat-message" class="hide" type="text/x-handlebars-template">
-{{#each this}}
-    <li class="media poprigun-chat-message-child" data-message="{{message_id}}">
-        <div class="media-message">
-            <div class="media">
-                <a class="pull-left" href="{{link}}">
-                    <img class="media-object chat-image" src="{{user_avatar}}">
-                </a>
-                <div class="media-body">
-                    <div class="message-text">{{message}}</div>
-                    <br>
-                    <small class="text-muted">{{user_name}}</small>
-                    <hr>
-                </div>
-            </div>
-        </div>
-    </li>
-{{/each}}
 </div>

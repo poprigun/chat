@@ -16,21 +16,21 @@ use Yii;
  *
  * @property PoprigunChatMessage $message
  */
-class PoprigunChatAttachment extends ActiveRecord implements StatusInterface
-{
+class PoprigunChatAttachment extends ActiveRecord implements StatusInterface{
+
     /**
      * @inheritdoc
      */
-    public static function tableName()
-    {
+    public static function tableName(){
+
         return 'poprigun_chat_attachment';
     }
 
     /**
      * @inheritdoc
      */
-    public function rules()
-    {
+    public function rules(){
+
         return [
             [['message_id'], 'required'],
             [['message_id'], 'integer'],
@@ -43,8 +43,8 @@ class PoprigunChatAttachment extends ActiveRecord implements StatusInterface
     /**
      * @inheritdoc
      */
-    public function attributeLabels()
-    {
+    public function attributeLabels(){
+
         return [
             'id' => 'ID',
             'message_id' => 'Message ID',
@@ -55,10 +55,12 @@ class PoprigunChatAttachment extends ActiveRecord implements StatusInterface
     }
 
     /**
+     * Get message
+     *
      * @return \yii\db\ActiveQuery
      */
-    public function getMessage()
-    {
+    public function getMessage(){
+
         return $this->hasOne(PoprigunChatMessage::className(), ['id' => 'message_id']);
     }
 }

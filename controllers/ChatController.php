@@ -3,9 +3,13 @@
 namespace poprigun\chat\controllers;
 
 use poprigun\chat\filters\AjaxFilter;
+use poprigun\chat\helpers\DialogFormatter;
+use poprigun\chat\helpers\MessageFormatter;
+use poprigun\chat\models\forms\MessageForm;
 use poprigun\chat\models\PoprigunChatMessage;
 use poprigun\chat\models\PoprigunChatDialog;
 use poprigun\chat\models\PoprigunChatUserRel;
+use poprigun\chat\models\SearchMessage;
 use poprigun\chat\widgets\Chat;
 use Yii;
 use yii\filters\ContentNegotiator;
@@ -17,7 +21,7 @@ use yii\widgets\ActiveForm;
 
 class ChatController extends Controller{
 
-    public $user;
+    protected $user;
 
     public function init(){
         $this->user = Yii::$app->user->identity;
@@ -47,56 +51,39 @@ class ChatController extends Controller{
     public function actionGetDialogs(){
 
         $type = Yii::$app->request->get('dialog_type');
-        $dialogs = PoprigunChatDialog::getUserDialogs($this->user->id, $type);
-        $result = $this->getDialogsArray($dialogs);
-        return $result;
+        $dialogQuery = PoprigunChatDialog::getUserDialogs($this->user->id, $type);
+        return DialogFormatter::getFormatter($dialogQuery);
     }
 
     /**
      * Get messages for dialog
-     *
      * @return array
-     * @throws BadRequestHttpException
      */
-    public function actionGetDialogMessages(){
+    public function actionGetMessages(){
 
-        /**
-         * @var $dialog PoprigunChatDialog
-         */
         $dialogId = Yii::$app->request->get('dialogId');
-        $dialog = PoprigunChatDialog::findOne(['id' => Chat::decodeDialogId($dialogId)]);
+        $messageCount = Yii::$app->request->get('count', Chat::$defaultCount);
+        $oldMessage = Yii::$app->request->get('order_by',false);
 
-        $messageId = Yii::$app->request->get('messageId');
-        $old = Yii::$app->request->get('old',false);
-        $count = Yii::$app->request->get('count',false);
-        $messageCount = Yii::$app->request->get('message_count',false);
+        $dialog = PoprigunChatDialog::getDialog($this->user->id, $dialogId);
 
-        if(null == $dialog || !$dialog->isAllowed($this->user->id)){
+        if(null === $dialog){
             throw new \BadMethodCallException;
         }
 
-        $limit = !$messageCount ? Chat::$defaultCount : $messageCount;
+        $searchMessage = new SearchMessage([
+            'limit' => $messageCount,
+         //   'startId' => $messageCount,
+            'oldMessages' => $messageCount,
+            'dialogId' => $dialogId,
+         //   'view' => 1,
+        ]);
 
-        if($old){
-            $messages = $dialog->getMessages($limit, $messageId,true);
-        }else{
-            $messages = $dialog->getMessages(empty($messageId) ? $limit : null, $messageId);
-        }
+        $formatter = MessageFormatter::getFormatter($searchMessage->search($dialog->getMessages()));
+        $messageIds = MessageFormatter::getUnreadMessage($formatter);
+        PoprigunChatMessage::setStaticMessageView($messageIds);
 
-        $chatUser = $dialog->getPoprigunChatUsers()->andWhere(['user_id' => $this->user->id ])->one();
-
-        PoprigunChatUserRel::setReadMessage($chatUser->id, PoprigunChatUserRel::getUnreadMessage($chatUser->id,$messages));
-        $json = $this->getMessageArray($messages);
-        if(!empty($json)){
-            krsort($json);
-            $json = array_values($json);
-
-            if($count){
-                $json['count'] = $dialog->getPoprigunChat()->count();
-            }
-        }
-
-        return $json;
+        return $formatter;
     }
 
     /**
@@ -107,22 +94,28 @@ class ChatController extends Controller{
      */
     public function actionSendMessage(){
 
-        $model = new PoprigunChatMessage();
+        $model = new MessageForm();
         if($model->load(Yii::$app->request->post())){
 
-            $model->author_id = $this->user->id;
+            $model->sender_id = $this->user->id;
             $validate = ActiveForm::validate($model);
-            if(empty($validate)){
-                $newMessage = $model->sendMessage();
-                $result =  $newMessage === false ? $newMessage : $this->getMessageArray([$newMessage]);
-            }else{
-                $result = $validate;
-            }
 
+            if(empty($validate)){
+                $message = $model->saveMessage();
+                $response['response'] =  $message ? 'success' : 'error';
+                if(!$message){
+                    $response = false;
+                }else{
+                    $response['data'] = MessageFormatter::getMessageFormat($message);
+                }
+
+            }else{
+                $response = $validate;
+            }
         }else{
-            $result = $model->errors;
+            $response = $model->errors;
         }
-        return $result;
+        return $response;
     }
 
     /**
@@ -132,64 +125,22 @@ class ChatController extends Controller{
     * @return array
     */
     public function actionDeleteDialog($dialogId){
+
         return [
-            'status' => PoprigunChatDialog::deleteDialog(Chat::decodeDialogId($dialogId)) ? 'success':'error'
+            'status' => PoprigunChatDialog::setStaticDialogStatus($dialogId,PoprigunChatDialog::STATUS_DELETED) ? 'success':'error'
         ];
     }
 
     /**
-    * Delete message (change status)
-    *
-    * @param $messageId
-    * @return array
-    */
+     * Delete message (change status)
+     *
+     * @param integer $messageId
+     * @return array
+     */
     public function actionDeleteMessage($messageId){
+
         return [
-            'status' => PoprigunChatUserRel::deleteMessage(Chat::decodeUserId($messageId)) ? 'success':'error'
+            'status' =>  PoprigunChatMessage::setStaticMessageStatus($messageId, PoprigunChatMessage::STATUS_DELETED) ? 'success':'error'
         ];
-    }
-
-    public function getMessageArray($dialog){
-
-        $result = [];
-        foreach($dialog as $key => $message){
-            $tempArray = [];
-            /**
-             * @var $message PoprigunChatMessage
-             */
-
-            $tempArray['user_id'] = $message->author_id;
-            $tempArray['user_name'] = $message->userName;
-            $tempArray['date'] = strtotime($message->created_at);
-            $tempArray['message'] = $message->message;
-            $tempArray['message_id'] = $message->id;
-            $tempArray['dialog_id'] = Chat::codeDialogId($message->dialog_id);
-            $tempArray['user_avatar'] =  $message->userAvatar;
-            $result[] = $tempArray;
-        }
-
-        return $result;
-    }
-
-    public function getDialogsArray($dialogs){
-
-        $result = [];
-        if(!empty($dialogs)){
-
-            foreach($dialogs as $key => $dialog){
-                /**
-                 * @var $dialog PoprigunChatDialog
-                 */
-                $result[$key]['dialog_id'] = Chat::codeDialogId($dialog->id);
-                $result[$key]['user_id'] = $dialog->author_id;
-                $result[$key]['user_name'] = $dialog->userName;
-                $result[$key]['new_count'] = $dialog->newCount;
-                $result[$key]['image'] = $dialog->userAvatar;
-                $lastMessages = $dialog->getMessages(1);
-                $result[$key]['last_message'] =  current(array_values($lastMessages)) ?  current(array_values($lastMessages))->message : '';
-            }
-        }
-
-        return $result;
     }
 }

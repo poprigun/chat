@@ -14,6 +14,7 @@ class ChatWithoutNodeAssets extends AssetBundle{
     public $js = [
         'handlebars.min-v4.0.3.js',
         'withoutNode.js',
+        'mustache.min.js',
     ];
     /**
      * @inheritdoc

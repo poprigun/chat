@@ -19,13 +19,11 @@ use yii\helpers\ArrayHelper;
  * @property string $updated_at
  * @property string $created_at
  *
- * @property PoprigunChatMessage[] $poprigunChat
- * @property User $user
- * @property PoprigunChatUser[] $PoprigunChatUsers
  */
 class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
 
     const TYPE_PERSONAL = 1;
+
     /**
      * @inheritdoc
      */
@@ -44,7 +42,6 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
             [['author_id', 'status','type'], 'integer'],
             [['created_at', 'updated_at'], 'safe'],
             [['title'], 'string', 'max' => 128],
-            [['author_id'], 'exist', 'skipOnError' => false, 'targetClass' => $this->pchatSettings['userModel'], 'targetAttribute' => ['author_id' => 'id']],
         ];
     }
 
@@ -65,72 +62,40 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
     }
 
     /**
+     * Get dialog messages
+     *
      * @return \yii\db\ActiveQuery
      */
-    public function getPoprigunChat(){
+    public function getMessages(){
 
         return $this->hasMany(PoprigunChatMessage::className(), ['dialog_id' => 'id']);
     }
 
     /**
+     * Get dialog users
+     *
      * @return \yii\db\ActiveQuery
      */
-    public function getUser(){
-
-        return $this->hasOne($this->pchatSettings['userModel'], ['id' => 'author_id']);
-    }
-
-    /**
-     * @return \yii\db\ActiveQuery
-     */
-    public function getPoprigunChatUsers(){
+    public function getDialogUsers(){
 
         return $this->hasMany(PoprigunChatUser::className(), ['dialog_id' => 'id']);
     }
 
     /**
-     * Get all user dialogs
+     * Check if dialog is exist
      *
-     * @param integer $userId
-     * @param integer|null $type
-     * @return array|\yii\db\ActiveRecord[]
+     * @param integer $senderId
+     * @param integer $dialogId
+     * @return bool|PoprigunChatDialog
      */
-    public static function getUserDialogs($userId, $type = null){
+    public static function getDialog($senderId, $dialogId){
 
-        $query = self::find()
-            ->innerJoinWith('poprigunChatUsers')
-            ->innerJoinWith('poprigunChat')
-            ->innerJoinWith('poprigunChat.chatUserRel')
-            ->andWhere([PoprigunChatUser::tableName().'.user_id' => $userId])
-            ->andWhere([PoprigunChatUserRel::tableName().'.status' => PoprigunChatUserRel::STATUS_ACTIVE]);
-
-        if(null !== $type){
-            $query->andWhere(['type' => $type]);
-        }
-
-        return $query->all();
-    }
-
-    /**
-     * Get dialog or create new if not exist
-     *
-     * @param integer $senderId (id sender user)
-     * @param integer $receiverId (id receiver user)
-     * @param null|string $title
-     * @return PoprigunChatDialog
-     */
-    public static function getMessageDialog($senderId, $receiverId, $title = null, $type =  self::TYPE_PERSONAL){
-
-        if($senderId == $receiverId)
-            throw new \BadFunctionCallException('The same sender and receiver id');
-
-        $dialog = self::isUserDialogExist($senderId,$receiverId,$type);
-
-        if(!$dialog){
-            $dialog = self::createDialog($senderId,$receiverId,$title,$type);
-        }
-
-        return $dialog;
+        return PoprigunChatDialog::find()
+            ->innerJoinWith('dialogUsers')
+            ->andWhere([
+                PoprigunChatDialog::tableName().'.id'   => $dialogId,
+                PoprigunChatUser::tableName().'.user_id'=> $senderId,
+            ])->one();
     }
 
     /**
@@ -143,23 +108,25 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
      */
     public static function isUserDialogExist($senderId, $receiverId, $type = self::TYPE_PERSONAL){
 
-        if($senderId == $receiverId)
-            throw new \BadFunctionCallException('The same sender and receiver id');
-
         $dialog = self::find()
             ->innerJoinWith([
-                'poprigunChatUsers' => function ($q) {
+                'dialogUsers' => function ($q) {
                     $q->from('poprigun_chat_user pcu1');
                 },
             ])
             ->innerJoinWith([
-                'poprigunChatUsers' => function ($q) {
+                'dialogUsers' => function ($q) {
                     $q->from('poprigun_chat_user pcu2');
                 },
             ])
             ->andWhere(['pcu1.user_id' => $senderId])
             ->andWhere(['pcu2.user_id' => $receiverId])
             ->andWhere([PoprigunChatDialog::tableName().'.type' => $type])
+            ->andWhere([
+                'or',
+                'pcu1.status' => PoprigunChatUser::STATUS_ACTIVE,
+                'pcu2.status' => PoprigunChatUser::STATUS_ACTIVE,
+            ])
             ->one();
 
         return !empty($dialog) ? $dialog : false;
@@ -180,7 +147,9 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
         $dialog->author_id = $ownerId;
         $dialog->title = $title;
         $dialog->type = $type;
-        $dialog->save();
+        if(!$dialog->save()){
+            throw new \BadMethodCallException('Dialog doesn`t created');
+        }
 
         $dialog->setUserToDialog($ownerId);
         if(is_array($userId)){
@@ -204,167 +173,95 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
         $messageUser = new PoprigunChatUser();
         $messageUser->user_id = $userId;
         $messageUser->dialog_id = $this->id;
-        $messageUser->save();
+        return $messageUser->save();
     }
 
     /**
-     * Check user permission
+     * Get message count current dialog
      *
-     * @param integer $userId
-     * @return bool
+     * @param int $view
+     * @param null $userId
+     * @return int|string
      */
-    public function isAllowed($userId){
+    public function getMessageCount($view = PoprigunChatUserRel::NEW_MESSAGE, $userId = null){
 
-        return $this->getPoprigunChatUsers()->where(['user_id' => $userId])->exists();
-    }
+        $userId = $userId === null ? \Yii::$app->user->id : $userId;
 
-    /**
-     * Check user permission
-     * @param integer $dialogId
-     * @param  integer $userId
-     * @return bool
-     */
-    public static function idDialogAllowed($dialogId, $userId){
-
-        return self::find()
-            ->innerJoinWith('poprigunChatUsers')
-            ->andWhere([PoprigunChatDialog::tableName().'.id' => $dialogId])
+        return PoprigunChatUserRel::find()
+            ->innerJoinWith('dialogUser')
+            ->innerJoinWith('dialogUser.dialog')
+            ->andWhere([self::tableName().'.id' => $this->id])
             ->andWhere([PoprigunChatUser::tableName().'.user_id' => $userId])
-            ->exists();
-    }
-
-    /**
-     * Check if dialog is exist
-     *
-     * @param integer $senderId
-     * @param integer $dialogId
-     * @return bool|PoprigunChatDialog
-     */
-    public static function getDialog($senderId, $dialogId){
-
-        $dialog = PoprigunChatDialog::find()
-            ->innerJoinWith('poprigunChatUsers')
-            ->where([
-                PoprigunChatDialog::tableName().'.id'     => $dialogId,
-                PoprigunChatUser::tableName().'.user_id'=> $senderId,
-            ])->one();
-
-        return $dialog;
-    }
-    /**
-     * Get messages
-     *
-     * @param null $limit
-     * @param null $messageId
-     * @param null $oldMessage
-     * @param array $view
-     * @return array|\yii\db\ActiveRecord[]
-     *
-     */
-    public function getMessages($limit = null, $messageId = null, $oldMessage = false, $view = [PoprigunChatUserRel::NEW_MESSAGE, PoprigunChatUserRel::OLD_MESSAGE]){
-        $query = PoprigunChatMessage::find()
-            ->innerJoinWith('chatUserRel')
-            ->innerJoinWith('chatUserRel.chatUser')
-            //->innerJoin(PoprigunChatUser::tableName(),[PoprigunChatUser::tableName().'.id' => PoprigunChatUserRel::tableName().'.chat_user_id'])
-            ->where([PoprigunChatMessage::tableName().'.dialog_id' => $this->id])
             ->andWhere([PoprigunChatUserRel::tableName().'.is_view' => $view])
-            ->andWhere([PoprigunChatUserRel::tableName().'.status' => StatusInterface::STATUS_ACTIVE])
-            //->andWhere([PoprigunChatUserRel::tableName().'.chat_user_id' => Yii::$app->user->id])
-            ->andWhere([PoprigunChatUser::tableName().'.user_id' => Yii::$app->user->id])
-            ->orderBy([PoprigunChatMessage::tableName().'.id' => SORT_DESC]);
-        if(null != $limit){
-            $query->limit($limit);
-        }
-
-        if(null != $messageId){
-            if($oldMessage){
-                $query->andWhere(['<',PoprigunChatMessage::tableName().'.id',$messageId]);
-            }else{
-                $query->andWhere(['>',PoprigunChatMessage::tableName().'.id',$messageId]);
-            }
-
-        }else{
-
-        }
-        return $query->indexBy('id')->all();
-    }
-
-    public static function newMessage($senderId, $receiverId){
-
+            ->count();
     }
 
     /**
-     * Add message to dialog
+     * Get message count all dialog
+     *
+     * @param int $view
+     * @param null $userId
+     * @return int|string
+     */
+    public static function getUserMessageCount($view = PoprigunChatUserRel::NEW_MESSAGE, $userId = null){
+
+        $userId = $userId === null ? \Yii::$app->user->id : $userId;
+
+        return PoprigunChatUserRel::find()
+            ->innerJoinWith('dialogUser')
+            ->andWhere([PoprigunChatUser::tableName().'.user_id' => $userId])
+            ->andWhere([PoprigunChatUserRel::tableName().'.is_view' => $view])
+            ->count();
+    }
+
+    /**
+     * Send message
      *
      * @param integer $senderId
-     * @param string $message
-     * @return bool
+     * @param string $text
+     * @param array $receivers
+     * @return bool|Message
      */
-    public function addMessageToDialog($senderId, $message){
+    public function sendMessage($senderId, $text, array $receivers = []){
 
-        if(!$this->isAllowed($senderId)){
+        $message = new PoprigunChatMessage();
+        $message->message = $text;
+        $message->dialog_id = $this->id;
+        $message->author_id = $senderId;
+        if(!$message->save()){
             return false;
         }
 
-        $poprigunChat = new PoprigunChatMessage([
-            'dialog_id' => $this->id,
-            'message' => $message,
-            'author_id' => $senderId,
-        ]);
+        array_push($receivers,$senderId);
 
-        if($poprigunChat->save()){
-            foreach($this->poprigunChatUsers as $user){
-                $rel = new PoprigunChatUserRel([
-                    'message_id' => $poprigunChat->id,
-                    'chat_user_id' => $user->id,
-                    'is_view' => PoprigunChatUserRel::NEW_MESSAGE,
-                    'status' => PoprigunChatUserRel::STATUS_ACTIVE,
-                ]);
-                if($senderId == $user->user_id){
-                    $rel->is_view = PoprigunChatUserRel::OLD_MESSAGE;
-                }
-
-                if(!$rel->save()){
-                    error_log($rel->errors);
-                }
-            }
-            return $poprigunChat;
+        $receivers = PoprigunChatUser::find()->andWhere(['user_id' => $receivers])->asArray()->all();
+        foreach($receivers as $receiver){
+            $rel = new PoprigunChatUserRel();
+            $rel->message_id = $message->id;
+            $rel->chat_user_id = $receiver['id'];
+            $rel->is_view = $receiver['user_id'] == $senderId ? PoprigunChatUserRel::OLD_MESSAGE : PoprigunChatUserRel::NEW_MESSAGE;
+            $rel->status = PoprigunChatUserRel::STATUS_ACTIVE;
+            $rel->save();
         }
-        return false;
+
+        return $message;
     }
 
     /**
-     * Get new message count
-     * @param null|integer $dialogId
-     * @return int|string
-     */
-    public function getNewCount($dialogId = null){
-
-        $query = $this->hasMany(PoprigunChatMessage::className(), ['dialog_id' => 'id'])
-            ->innerJoinWith('chatUserRel')
-            ->andWhere([PoprigunChatUserRel::tableName().'.is_view' => PoprigunChatUserRel::NEW_MESSAGE]);
-        if(null !== $dialogId){
-            $query->andWhere([PoprigunChatDialog::tableName().'.id' => $dialogId]);
-        }
-        return $query->count();
-    }
-
-    /**
-     * Delete dialog/delete dialog messages (change status)
+     * Change status all dialog message for user
      *
-     * @param integer $dialogId
-     * @param integer|null $userId
-     * @return int
+     * @param null $userId
+     * @return bool|int
      */
-    public static function deleteDialog($dialogId, $userId = null){
+    public function setDialogStatus($status = PoprigunChatUserRel::STATUS_ACTIVE, $userId = null){
 
         $userId = $userId ? $userId : Yii::$app->user->id;
 
         $messageIds = PoprigunChatMessage::find()
             ->select([PoprigunChatMessage::tableName().'.id', PoprigunChatUser::tableName().'.id as chat_user_id'])
-            ->innerJoinWith('chatUserRel')
-            ->innerJoinWith('chatUserRel.chatUser')
-            ->andWhere([PoprigunChatMessage::tableName().'.dialog_id' => $dialogId])
+            ->innerJoinWith('messageUserRel')
+            ->innerJoinWith('messageUserRel.dialogUser')
+            ->andWhere([PoprigunChatMessage::tableName().'.dialog_id' => $this->id])
             ->andWhere([PoprigunChatUser::tableName().'.user_id' => $userId])
             ->asArray()
             ->all();
@@ -373,71 +270,91 @@ class PoprigunChatDialog extends ActiveRecord implements StatusInterface{
             return false;
         }
 
-        return PoprigunChatUserRel::updateAll(['status' => PoprigunChatUserRel::STATUS_DELETED],[
+        return PoprigunChatUserRel::updateAll(['status' => $status],[
             'message_id' => ArrayHelper::map($messageIds,'id','id'),
             'chat_user_id' => ArrayHelper::map($messageIds,'chat_user_id','chat_user_id'),
         ]);
     }
 
     /**
-     * Get dialog image
+     * Change status all dialog message for user
      *
-     * @return array
+     * @param null $userId
+     * @return bool|int
      */
-    public function getUserAvatar(){
+    public static function setStaticDialogStatus($dialogId, $status = PoprigunChatUserRel::STATUS_ACTIVE, $userId = null){
+        $dialog = self::findOne(['id' => $dialogId]);
 
-        $users = $this->poprigunChatUsers;
-
-        if(empty($users)){
-            throw new \BadMethodCallException;
+        if(null === $dialog){
+            return false;
         }
 
-        $image = [];
-        $avatarMethod = $this->pchatSettings['userAvatarMethod'];
-        foreach($users as $user){
-            if($user->user_id != Yii::$app->user->id){
-
-                if($this->pchatSettings['userModel'] == $avatarMethod['class']){
-                    $tempAvatar = $this->user->$avatarMethod['method'];
-                }else{
-                    $tempAvatar = $this->user->$avatarMethod['relation']->$avatarMethod['method'];
-                }
-
-                $image[] = $tempAvatar;
-            }
-        }
-
-        return $image;
+        return $dialog->setDialogStatus($status,$userId);
     }
 
     /**
-     * Get users names
+     * Change view status all dialog message for user
      *
-     * @return array
+     * @param null $userId
+     * @return bool|int
      */
-    public function getUserName(){
+    public function setDialogView($view = PoprigunChatUserRel::OLD_MESSAGE, $userId = null){
 
-        $users = $this->poprigunChatUsers;
+        $userId = $userId ? $userId : Yii::$app->user->id;
 
-        if(empty($users)){
-            throw new \BadMethodCallException;
+        $messageIds = PoprigunChatMessage::find()
+            ->select([PoprigunChatMessage::tableName().'.id', PoprigunChatUser::tableName().'.id as chat_user_id'])
+            ->innerJoinWith('messageUserRel')
+            ->innerJoinWith('messageUserRel.dialogUser')
+            ->andWhere([PoprigunChatMessage::tableName().'.dialog_id' => $this->id])
+            ->andWhere([PoprigunChatUser::tableName().'.user_id' => $userId])
+            ->asArray()
+            ->all();
+
+        if(empty($messageIds)){
+            return false;
         }
 
-        $name = [];
-        $nameMethod = $this->pchatSettings['userNameMethod'];
-
-        foreach($users as $user){
-            if($user->user_id != Yii::$app->user->id){
-
-                if($this->pchatSettings['userModel'] == $nameMethod['class']){
-                    $name[] = $user->user->$nameMethod['method'];
-                }else{
-                    $name[] = $user->user->$nameMethod['relation']->$nameMethod['method'];
-                }
-            }
-        }
-
-        return $name;
+        return PoprigunChatUserRel::updateAll(['is_view' => $view],[
+            'message_id' => ArrayHelper::map($messageIds,'id','id'),
+            'chat_user_id' => ArrayHelper::map($messageIds,'chat_user_id','chat_user_id'),
+        ]);
     }
 
+    /**
+     * Change view status all dialog message for user
+     *
+     * @param null $userId
+     * @return bool|int
+     */
+    public static function setStaticDialogView($dialogId, $status = PoprigunChatUserRel::OLD_MESSAGE, $userId = null){
+        $dialog = self::findOne(['id' => $dialogId]);
+
+        if(null === $dialog){
+            return false;
+        }
+
+        return $dialog->setDialogView($status,$userId);
+    }
+
+    /**
+     * Get all user dialogs
+     *
+     * @param integer $userId
+     * @param integer $status
+     * @param integer|null $type
+     * @return array|\yii\db\ActiveRecord[]
+     */
+    public static function getUserDialogs($userId, $type = null, $status = PoprigunChatUserRel::STATUS_ACTIVE){
+
+        $query = self::find()
+            ->innerJoinWith('dialogUsers')
+            ->innerJoinWith('messages')
+            ->innerJoinWith('messages.messageUserRel')
+            ->andWhere([PoprigunChatUser::tableName().'.user_id' => $userId])
+            ->andWhere([PoprigunChatUserRel::tableName().'.status' => $status])
+            ->andFilterWhere(['type' => $type]);
+
+        return $query;
+    }
 }
