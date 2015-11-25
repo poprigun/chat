@@ -95,7 +95,7 @@ class PoprigunChatUserRel extends \yii\db\ActiveRecord implements StatusInterfac
 
         return self::updateAll(['status' => self::STATUS_DELETED],[
             'message_id' => $message['id'],
-            'chat_user_id' => $userId['chat_user_id'],
+            'chat_user_id' => $message['chat_user_id'],
         ]);
     }
 
